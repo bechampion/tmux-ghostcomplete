@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="tmux-ghostcomplete logo" width="200">
+<img src="assets/logo.png" alt="tmux-ghostcomplete logo" width="400">
 
 # tmux-ghostcomplete
 
