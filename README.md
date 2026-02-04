@@ -25,7 +25,7 @@ This project was created from scratch through conversation with [Claude](https:/
 ## Demo
 
 <!-- Demo GIF -->
-  ![tmux-ghostcomplete demo](assets/demo.gif)
+![tmux-ghostcomplete demo](assets/demo.gif)
 
 
 ---
