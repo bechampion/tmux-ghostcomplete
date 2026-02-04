@@ -1,0 +1,24 @@
+#!/bin/sh
+# tmux-ghostcomplete: Extract tokens from tmux pane for fzf selection
+# Optimized: single awk does all processing
+
+target_pane="$2"
+
+# Capture and process in one awk - much faster than sed|tr|grep|awk|sort pipeline
+if [ -n "$target_pane" ]; then
+    tmux capture-pane -t "$target_pane" -p
+else
+    tmux capture-pane -p
+fi | awk '
+NR > 1 || NR == 1 {
+    # Replace brackets, parens, colons with spaces
+    gsub(/[\[\]():"]/, " ")
+    # Split into words
+    n = split($0, words)
+    for (i = 1; i <= n; i++) {
+        w = words[i]
+        if (length(w) > 4 && !seen[w]++) {
+            print w
+        }
+    }
+}'
