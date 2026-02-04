@@ -24,9 +24,9 @@ This project was created from scratch through conversation with [Claude](https:/
 
 ## Demo
 
-<p align="center">
-  <img src="assets/demo.gif" alt="tmux-ghostcomplete demo">
-</p>
+<!-- Demo GIF -->
+  ![tmux-ghostcomplete demo](assets/demo.gif)
+
 
 ---
 
