@@ -14,6 +14,16 @@ Complete text from anywhere visible in your tmux pane with a fuzzy finder popup.
 
 ---
 
+## Demo
+
+https://github.com/user-attachments/assets/demo.mp4
+
+<video src="assets/demo.mp4" controls width="100%"></video>
+
+https://github.com/jeronimo-garcia1/tmux-ghostcomplete/raw/main/assets/demo.mp4
+
+---
+
 ## What is this?
 
 Ever had a long path, URL, or identifier on screen and wished you could just autocomplete it without copy-pasting? **tmux-ghostcomplete** does exactly that.
@@ -29,19 +39,6 @@ Press `Ctrl+n` and a fuzzy finder popup appears with all the text tokens visible
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
 - **Kanagawa themed** - Beautiful colors that match the Kanagawa colorscheme (customizable)
 
-## Demo
-
-<!-- Add screenshots/gif here -->
-```
-┌──────────────────────────┐
-│ 🔍 kwork                 │
-│ ▶ kworker/u112:7-events  │
-│   kworker/20:2-mm_percpu │
-│   kworker/14:0-events    │
-│   kubernetes-dashboard   │
-└──────────────────────────┘
-```
-
 ## Requirements
 
 - [tmux](https://github.com/tmux/tmux) (with `display-popup` support, v3.2+)
@@ -55,7 +52,7 @@ Press `Ctrl+n` and a fuzzy finder popup appears with all the text tokens visible
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/tmux-ghostcomplete.git ~/.zsh/plugins/tmux-ghostcomplete
+   git clone https://github.com/jeronimo-garcia1/tmux-ghostcomplete.git ~/.zsh/plugins/tmux-ghostcomplete
    ```
 
 2. Copy the tokenizer script:
@@ -74,13 +71,20 @@ Press `Ctrl+n` and a fuzzy finder popup appears with all the text tokens visible
    source ~/.zshrc
    ```
 
+### Quick Install
+
+```bash
+git clone https://github.com/jeronimo-garcia1/tmux-ghostcomplete.git /tmp/tmux-ghostcomplete
+cd /tmp/tmux-ghostcomplete && ./install.sh
+```
+
 ### Using a Plugin Manager
 
 <details>
 <summary><b>zinit</b></summary>
 
 ```bash
-zinit light YOUR_USERNAME/tmux-ghostcomplete
+zinit light jeronimo-garcia1/tmux-ghostcomplete
 ```
 </details>
 
@@ -88,7 +92,7 @@ zinit light YOUR_USERNAME/tmux-ghostcomplete
 <summary><b>zplug</b></summary>
 
 ```bash
-zplug "YOUR_USERNAME/tmux-ghostcomplete"
+zplug "jeronimo-garcia1/tmux-ghostcomplete"
 ```
 </details>
 
@@ -96,7 +100,7 @@ zplug "YOUR_USERNAME/tmux-ghostcomplete"
 <summary><b>antigen</b></summary>
 
 ```bash
-antigen bundle YOUR_USERNAME/tmux-ghostcomplete
+antigen bundle jeronimo-garcia1/tmux-ghostcomplete
 ```
 </details>
 
