@@ -50,7 +50,7 @@ Press `Ctrl+n` and a fuzzy finder popup appears with all the text tokens visible
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jeronimo-garcia1/tmux-ghostcomplete.git ~/.zsh/plugins/tmux-ghostcomplete
+   git clone https://github.com/bechampion/tmux-ghostcomplete.git ~/.zsh/plugins/tmux-ghostcomplete
    ```
 
 2. Copy the tokenizer script:
@@ -72,7 +72,7 @@ Press `Ctrl+n` and a fuzzy finder popup appears with all the text tokens visible
 ### Quick Install
 
 ```bash
-git clone https://github.com/jeronimo-garcia1/tmux-ghostcomplete.git /tmp/tmux-ghostcomplete
+git clone https://github.com/bechampion/tmux-ghostcomplete.git /tmp/tmux-ghostcomplete
 cd /tmp/tmux-ghostcomplete && ./install.sh
 ```
 
@@ -82,7 +82,7 @@ cd /tmp/tmux-ghostcomplete && ./install.sh
 <summary><b>zinit</b></summary>
 
 ```bash
-zinit light jeronimo-garcia1/tmux-ghostcomplete
+zinit light bechampion/tmux-ghostcomplete
 ```
 </details>
 
@@ -90,7 +90,7 @@ zinit light jeronimo-garcia1/tmux-ghostcomplete
 <summary><b>zplug</b></summary>
 
 ```bash
-zplug "jeronimo-garcia1/tmux-ghostcomplete"
+zplug "bechampion/tmux-ghostcomplete"
 ```
 </details>
 
@@ -98,7 +98,7 @@ zplug "jeronimo-garcia1/tmux-ghostcomplete"
 <summary><b>antigen</b></summary>
 
 ```bash
-antigen bundle jeronimo-garcia1/tmux-ghostcomplete
+antigen bundle bechampion/tmux-ghostcomplete
 ```
 </details>
 
