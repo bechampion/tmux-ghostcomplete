@@ -16,11 +16,9 @@ Complete text from anywhere visible in your tmux pane with a fuzzy finder popup.
 
 ## Demo
 
-https://github.com/user-attachments/assets/demo.mp4
-
-<video src="assets/demo.mp4" controls width="100%"></video>
-
-https://github.com/jeronimo-garcia1/tmux-ghostcomplete/raw/main/assets/demo.mp4
+<p align="center">
+  <img src="assets/demo.gif" alt="tmux-ghostcomplete demo" width="800">
+</p>
 
 ---
 
