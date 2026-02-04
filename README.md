@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" alt="tmux-ghostcomplete logo" width="200">
+
 # tmux-ghostcomplete
 
 **Screen-aware autocomplete for your terminal**
@@ -17,7 +19,7 @@ Complete text from anywhere visible in your tmux pane with a fuzzy finder popup.
 ## Demo
 
 <p align="center">
-  <img src="assets/demo.gif" alt="tmux-ghostcomplete demo">>
+  <img src="assets/demo.gif" alt="tmux-ghostcomplete demo">
 </p>
 
 ---
@@ -294,10 +296,12 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ## Disclaimer
 
-> **Note**: This project was created entirely through conversation with [Claude](https://www.anthropic.com/claude) (Anthropic's AI assistant). The author prompted and directed the development but did not write the code directly. Use at your own risk - the author assumes no responsibility for any issues, damages, or unexpected behavior that may arise from using this software.
+> **Note**: This project was created entirely through conversation with AI using [OpenCode](https://github.com/anomalyco/opencode). The author prompted and directed the development but did not write the code directly. Use at your own risk - the author assumes no responsibility for any issues, damages, or unexpected behavior that may arise from using this software.
 
 ---
 
 <div align="center">
 Made with AI-assisted terminal love 🤖
+<br>
+<sub>Built with <a href="https://github.com/anomalyco/opencode">OpenCode</a></sub>
 </div>
