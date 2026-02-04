@@ -12,9 +12,15 @@ Complete text from anywhere visible in your tmux pane with a fuzzy finder popup.
 [![Shell: Zsh](https://img.shields.io/badge/Shell-Zsh-green.svg)](https://www.zsh.org/)
 [![tmux](https://img.shields.io/badge/tmux-required-orange.svg)](https://github.com/tmux/tmux)
 
-</div>
+---
+
+### 🤖 Built entirely with AI
+
+This project was created from scratch through conversation with [Claude](https://www.anthropic.com/claude) using [OpenCode](https://github.com/anomalyco/opencode) - no code was written manually.
 
 ---
+
+</div>
 
 ## Demo
 
@@ -296,12 +302,13 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ## Disclaimer
 
-> **Note**: This project was created entirely through conversation with AI using [OpenCode](https://github.com/anomalyco/opencode). The author prompted and directed the development but did not write the code directly. Use at your own risk - the author assumes no responsibility for any issues, damages, or unexpected behavior that may arise from using this software.
+> **Note**: This project was created entirely through conversation with [Claude](https://www.anthropic.com/claude) (Anthropic's AI assistant) using [OpenCode](https://github.com/anomalyco/opencode). The author prompted and directed the development but did not write the code directly. Use at your own risk - the author assumes no responsibility for any issues, damages, or unexpected behavior that may arise from using this software.
 
 ---
 
 <div align="center">
 Made with AI-assisted terminal love 🤖
-<br>
-<sub>Built with <a href="https://github.com/anomalyco/opencode">OpenCode</a></sub>
+<br><br>
+<a href="https://github.com/anomalyco/opencode"><img src="https://img.shields.io/badge/Built%20with-OpenCode-blue?style=for-the-badge" alt="Built with OpenCode"></a>
+<a href="https://www.anthropic.com/claude"><img src="https://img.shields.io/badge/Powered%20by-Claude-orange?style=for-the-badge" alt="Powered by Claude"></a>
 </div>
