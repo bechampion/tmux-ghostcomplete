@@ -17,7 +17,7 @@ Complete text from anywhere visible in your tmux pane with a fuzzy finder popup.
 ## Demo
 
 <p align="center">
-  <img src="assets/demo.gif" alt="tmux-ghostcomplete demo" width="800">
+  <img src="assets/demo.gif?v=2" alt="tmux-ghostcomplete demo" width="800">
 </p>
 
 ---
