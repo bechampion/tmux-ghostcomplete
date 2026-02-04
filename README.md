@@ -292,6 +292,12 @@ Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ---
 
+## Disclaimer
+
+> **Note**: This project was created entirely through conversation with [Claude](https://www.anthropic.com/claude) (Anthropic's AI assistant). The author prompted and directed the development but did not write the code directly. Use at your own risk - the author assumes no responsibility for any issues, damages, or unexpected behavior that may arise from using this software.
+
+---
+
 <div align="center">
-Made with terminal love
+Made with AI-assisted terminal love 🤖
 </div>
