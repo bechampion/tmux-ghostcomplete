@@ -273,6 +273,43 @@ local delimiters='/:,@()[]=#?&-'
 
 ---
 
+### Token Exceptions
+
+The tokenizer preserves certain patterns intact instead of splitting them. These are defined in `bin/tmux-ghostcomplete`:
+
+| Exception | Pattern | Example |
+|-----------|---------|---------|
+| HTTP URLs | `http://...`, `https://...` | `https://github.com/user/repo` |
+| Git SSH | `git@...` | `git@github.com:user/repo.git` |
+| FTP URLs | `ftp://...` | `ftp://files.example.com/path` |
+| File URLs | `file://...` | `file:///home/user/doc.txt` |
+
+**Adding New Exceptions:**
+
+Edit `bin/tmux-ghostcomplete` and add patterns to the regex:
+
+```awk
+# Current pattern (in the while match line):
+/https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+/
+
+# To add s3:// URLs:
+/https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+|s3:\/\/[^ \t\[\]()]+/
+```
+
+**Potential future exceptions to consider:**
+
+- `s3://bucket/path` - AWS S3 URLs
+- `gs://bucket/path` - Google Cloud Storage URLs  
+- `docker://image:tag` - Docker image references
+- `mailto:user@example.com` - Email links
+- `ssh://user@host` - SSH URLs
+- `redis://host:port` - Redis connection strings
+- `postgres://...` - Database connection strings
+- `arn:aws:...` - AWS ARNs
+- IP addresses with ports - `192.168.1.1:8080`
+
+To request a new exception, open an issue on GitHub!
+
 ## Configuration
 
 ### Key Binding
