@@ -49,12 +49,22 @@ _gc_complete() {
         # Copy to wayland clipboard
         echo -n "$selection" | wl-copy 2>/dev/null
         
-        # Use same query logic for overlap detection
-        if [[ -n "$query" && "$selection" == "$query"* ]]; then
-            # Strip the query prefix to avoid duplication
+        # Determine how to insert the selection:
+        # 1. If selection starts with query -> strip query prefix and append
+        # 2. If query is in the middle of selection -> replace the query with full selection
+        # 3. Otherwise -> just append
+        
+        if [[ -z "$query" ]]; then
+            # No query, just append
+            LBUFFER="${LBUFFER}${selection}"
+        elif [[ "$selection" == "$query"* ]]; then
+            # Selection starts with query - strip prefix and append
             LBUFFER="${LBUFFER}${selection#$query}"
+        elif [[ "$selection" == *"$query"* ]]; then
+            # Query is in the middle of selection - replace query with full selection
+            LBUFFER="${LBUFFER%$query}$selection"
         else
-            # Just append
+            # No match, just append
             LBUFFER="${LBUFFER}${selection}"
         fi
     fi
