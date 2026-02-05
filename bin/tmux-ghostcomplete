@@ -11,8 +11,26 @@ else
     tmux capture-pane -p
 fi | awk '
 {
-    gsub(/[\[\]():"]/, " ")
-    n = split($0, words)
+    # First pass: extract and mark URLs to avoid re-processing
+    line = $0
+    outline = $0
+    
+    # Match URLs and git addresses (using character class for quotes)
+    while (match(line, /https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+/)) {
+        url = substr(line, RSTART, RLENGTH)
+        # Clean trailing punctuation from URLs
+        gsub(/[,;:)\]"]+$/, "", url)
+        if (length(url) > 4 && !seen[url]++) {
+            print url
+        }
+        # Remove URL from outline to avoid double processing
+        sub(url, " ", outline)
+        line = substr(line, RSTART + RLENGTH)
+    }
+    
+    # Second pass: process remaining words (strip brackets, parens, colons, quotes)
+    gsub(/[\[\]():"]/, " ", outline)
+    n = split(outline, words)
     for (i = 1; i <= n; i++) {
         w = words[i]
         if (length(w) > 4 && !seen[w]++) {
