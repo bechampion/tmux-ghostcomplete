@@ -8,21 +8,25 @@ _gc_complete() {
     local word="${LBUFFER##* }"
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
+    local queryfile=$(mktemp)
     
-    # Centered popup, use sh -c for lighter subshell
+    # Write word to file to avoid escaping issues
+    printf '%s' "$word" > "$queryfile"
+    
+    # Centered popup
     # --no-sort preserves input order, --tiebreak=index keeps order for equal matches
     tmux display-popup -E -B -w 25% -h 40% -x C -y C \
-        "sh -c '~/.local/bin/tmux-ghostcomplete \"$word\" \"$pane_id\" | fzf --reverse --no-sort --tiebreak=index --query=\"$word\" \
+        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' | fzf --reverse --no-sort --tiebreak=index --query=\"\$(cat '$queryfile')\" \
         --border=rounded \
-        --border-label=\"󰊠 GhostComplete\" \
+        --border-label='󰊠 GhostComplete' \
         --border-label-pos=0 \
-        --pointer=\"▶\" \
-        --prompt=\"󰓾 \" \
-        --color=\"hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D,label:#7E9CD8\" \
-        --highlight-line > \"$tmpfile\"'"
+        --pointer='▶' \
+        --prompt='󰓾 ' \
+        --color='hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D,label:#7E9CD8' \
+        --highlight-line > '$tmpfile'"
     
-    local selection=$(cat "$tmpfile")
-    rm -f "$tmpfile"
+    local selection=$(cat "$tmpfile" 2>/dev/null)
+    rm -f "$tmpfile" "$queryfile"
     
     if [[ -n "$selection" ]]; then
         # Copy to wayland clipboard
