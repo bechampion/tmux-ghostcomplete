@@ -4,12 +4,12 @@
 
 target_pane="$2"
 
-# Capture and process - simple version
+# Capture and process - no tac, fzf --reverse will flip display
 if [ -n "$target_pane" ]; then
     tmux capture-pane -t "$target_pane" -p
 else
     tmux capture-pane -p
-fi | tac | awk '
+fi | awk '
 {
     gsub(/[\[\]():"]/, " ")
     n = split($0, words)

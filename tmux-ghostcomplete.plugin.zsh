@@ -18,7 +18,7 @@ _gc_complete() {
     # --no-sort keeps input order, --tiebreak=index preserves order for equal scores
     # --track keeps selected item in view while filtering
     tmux display-popup -E -B -w 25% -h 40% -x C -y C \
-        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' | fzf --no-sort --track --query=\"\$(cat '$queryfile')\" \
+        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' | fzf --reverse --no-sort --track --query=\"\$(cat '$queryfile')\" \
         --border=rounded \
         --border-label='󰊠 GhostComplete' \
         --border-label-pos=0 \
