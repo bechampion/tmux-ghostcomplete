@@ -11,7 +11,7 @@ if [ -n "$target_pane" ]; then
     tmux capture-pane -t "$target_pane" -p
 else
     tmux capture-pane -p
-fi | tac | awk '
+fi | cat | awk '
 {
     # Replace brackets, parens, colons with spaces
     gsub(/[\[\]():"]/, " ")
