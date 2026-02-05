@@ -49,12 +49,14 @@ _gc_complete() {
         # Copy to wayland clipboard
         echo -n "$selection" | wl-copy 2>/dev/null
         
-        # If user changed the query (deleted/modified it), replace the whole word
+        # If user changed the query (deleted/modified it), replace just the query part
         if [[ "$final_query" != "$query" ]]; then
-            # Query was changed - replace the whole word
-            if [[ -n "$word" ]]; then
-                LBUFFER="${LBUFFER%$word}$selection"
+            # Query was changed - replace just the query (suffix), keep prefix
+            if [[ -n "$query" ]]; then
+                # Had a query, replace it
+                LBUFFER="${LBUFFER%$query}$selection"
             else
+                # No query (ended with delimiter), just append
                 LBUFFER="${LBUFFER}${selection}"
             fi
         # Original query logic
