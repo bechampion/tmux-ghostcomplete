@@ -11,11 +11,11 @@ else
     tmux capture-pane -p
 fi | awk '
 {
-    # First pass: extract and mark URLs to avoid re-processing
+    # First pass: extract and mark special patterns to avoid re-processing
     line = $0
     outline = $0
     
-    # Match URLs and git addresses (using character class for quotes)
+    # Match URLs and git addresses
     while (match(line, /https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+/)) {
         url = substr(line, RSTART, RLENGTH)
         # Clean trailing punctuation from URLs
@@ -28,7 +28,24 @@ fi | awk '
         line = substr(line, RSTART + RLENGTH)
     }
     
-    # Second pass: process remaining words (strip brackets, parens, colons, quotes)
+    # Second pass: extract IPv6 addresses (before stripping colons)
+    # IPv6 pattern: groups of hex digits separated by colons, with optional :: for compression
+    line = outline
+    while (match(line, /[0-9a-fA-F]*:[0-9a-fA-F]*:[0-9a-fA-F:]+/)) {
+        ipv6 = substr(line, RSTART, RLENGTH)
+        # Clean trailing punctuation
+        gsub(/[,;)\]"]+$/, "", ipv6)
+        # Validate it looks like IPv6 (at least 2 colons, hex chars)
+        if (ipv6 ~ /^[0-9a-fA-F:]+$/ && gsub(/:/, ":", ipv6) >= 2) {
+            if (length(ipv6) > 4 && !seen[ipv6]++) {
+                print ipv6
+            }
+        }
+        sub(ipv6, " ", outline)
+        line = substr(line, RSTART + RLENGTH)
+    }
+    
+    # Third pass: process remaining words (strip brackets, parens, colons, quotes)
     gsub(/[\[\]():"]/, " ", outline)
     n = split(outline, words)
     for (i = 1; i <= n; i++) {

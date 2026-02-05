@@ -283,6 +283,7 @@ The tokenizer preserves certain patterns intact instead of splitting them. These
 | Git SSH | `git@...` | `git@github.com:user/repo.git` |
 | FTP URLs | `ftp://...` | `ftp://files.example.com/path` |
 | File URLs | `file://...` | `file:///home/user/doc.txt` |
+| IPv6 addresses | `xxxx:xxxx:...` | `2001:0db8:85a3::8a2e:0370:7334` |
 
 **Adding New Exceptions:**
 
