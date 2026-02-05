@@ -1,16 +1,18 @@
 #!/bin/sh
 # tmux-ghostcomplete: Extract tokens from tmux pane for fzf selection
 # Optimized: single awk does all processing
+# Tokens ordered from bottom to top (most recent first)
 
 target_pane="$2"
 
 # Capture and process in one awk - much faster than sed|tr|grep|awk|sort pipeline
+# Use tac to reverse line order so bottom lines come first
 if [ -n "$target_pane" ]; then
     tmux capture-pane -t "$target_pane" -p
 else
     tmux capture-pane -p
-fi | awk '
-NR > 1 || NR == 1 {
+fi | tac | awk '
+{
     # Replace brackets, parens, colons with spaces
     gsub(/[\[\]():"]/, " ")
     # Split into words
