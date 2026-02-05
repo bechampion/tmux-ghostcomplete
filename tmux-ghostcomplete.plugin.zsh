@@ -7,7 +7,7 @@ _gc_complete() {
     [[ -z "$TMUX" ]] && return 0
     
     # Delimiters that separate "words" within a token
-    local delimiters='/:,@()[]='
+    local delimiters='/:,@()[]="'"'"
     
     local word="${LBUFFER##* }"
     local pane_id=$(tmux display-message -p '#{pane_id}')
