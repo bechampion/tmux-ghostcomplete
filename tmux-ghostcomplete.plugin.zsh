@@ -10,8 +10,9 @@ _gc_complete() {
     local tmpfile=$(mktemp)
     
     # Centered popup, use sh -c for lighter subshell
+    # --no-sort preserves input order, --tiebreak=index keeps order for equal matches
     tmux display-popup -E -B -w 25% -h 40% -x C -y C \
-        "sh -c '~/.local/bin/tmux-ghostcomplete \"$word\" \"$pane_id\" | fzf --reverse --no-sort --query=\"$word\" \
+        "sh -c '~/.local/bin/tmux-ghostcomplete \"$word\" \"$pane_id\" | fzf --reverse --no-sort --tiebreak=index --query=\"$word\" \
         --border=rounded \
         --pointer=\"▶\" \
         --prompt=\"󰊠 \" \
