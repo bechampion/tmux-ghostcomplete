@@ -41,13 +41,14 @@ _gc_complete() {
         --highlight-line > '$tmpfile' 2>/dev/null; true"
     
     # First line is final query, second line is selection
-    local final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null)
-    local selection=$(sed -n '2p' "$tmpfile" 2>/dev/null)
+    # Strip any newlines/carriage returns to prevent accidental execution
+    local final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null | tr -d '\n\r')
+    local selection=$(sed -n '2p' "$tmpfile" 2>/dev/null | tr -d '\n\r')
     rm -f "$tmpfile" "$queryfile"
     
     if [[ -n "$selection" ]]; then
         # Copy to wayland clipboard
-        echo -n "$selection" | wl-copy 2>/dev/null
+        printf '%s' "$selection" | wl-copy 2>/dev/null
         
         # If user changed the query (deleted/modified it), replace just the query part
         if [[ "$final_query" != "$query" ]]; then
