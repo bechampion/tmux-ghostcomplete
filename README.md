@@ -145,6 +145,7 @@ When you press `Ctrl+n`, the plugin looks at what you've typed and:
 
 1. **Extracts the query** - Uses only the text after the last delimiter for filtering
 2. **Avoids duplication** - When inserting, strips any overlapping prefix
+3. **Query changes** - If you modify the query in the popup, the selection replaces your typed word
 
 ### Examples
 
@@ -231,6 +232,31 @@ git clone
 
 # Result:
 git clone git@github.com:user/repo.git
+```
+
+#### Changing Query in Popup
+
+```
+# You type:
+curl http://192
+
+# Popup opens with "192" as query
+# You delete the query and type "example"
+# You select: example.com
+
+# Result (replaces the whole word since query changed):
+curl example.com
+```
+
+```
+# You type:
+kubectl get serv
+
+# Popup opens with "serv" as query
+# You clear query and select: deployments
+
+# Result (replaces "serv" with selection):
+kubectl get deployments
 ```
 
 ### Customizing Delimiters
