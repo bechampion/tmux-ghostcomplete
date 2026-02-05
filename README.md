@@ -128,6 +128,9 @@ The selected text is also copied to your clipboard (Wayland).
 
 The plugin intelligently handles text insertion based on delimiters to avoid duplication.
 
+
+![Smart completion demo](assets/smart-completion-demo.gif)
+
 ### Delimiters
 
 The following characters are recognized as delimiters:
