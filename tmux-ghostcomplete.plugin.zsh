@@ -9,6 +9,9 @@ _gc_complete() {
     # Delimiters that separate "words" within a token
     local delimiters='/:,@()[]="'"'"
     
+    # Patterns that should trigger full replacement when both typed and selected match
+    local replace_patterns='^(https?://|ftp://|file://|git@|s3://|gs://)'
+    
     local word="${LBUFFER##* }"
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
@@ -50,8 +53,11 @@ _gc_complete() {
         # Copy to wayland clipboard
         printf '%s' "$selection" | wl-copy 2>/dev/null
         
+        # Check if both word and selection look like URLs/protocols - replace whole word
+        if [[ -n "$word" && "$word" =~ $replace_patterns && "$selection" =~ $replace_patterns ]]; then
+            LBUFFER="${LBUFFER%$word}$selection"
         # If user changed the query (deleted/modified it), replace just the query part
-        if [[ "$final_query" != "$query" ]]; then
+        elif [[ "$final_query" != "$query" ]]; then
             # Query was changed - replace just the query (suffix), keep prefix
             if [[ -n "$query" ]]; then
                 # Had a query, replace it
