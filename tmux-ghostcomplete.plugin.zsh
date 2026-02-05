@@ -14,7 +14,7 @@ _gc_complete() {
         "sh -c '~/.local/bin/tmux-ghostcomplete \"$word\" \"$pane_id\" | fzf --reverse --no-sort --query=\"$word\" \
         --border=rounded \
         --pointer=\"▶\" \
-        --prompt=\"󰯐 \" \
+        --prompt=\"󰊠 \" \
         --color=\"hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D\" \
         --highlight-line > \"$tmpfile\"'"
     
