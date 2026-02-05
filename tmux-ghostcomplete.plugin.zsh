@@ -6,17 +6,32 @@ _gc_complete() {
     # Ensure we're in tmux
     [[ -z "$TMUX" ]] && return 0
     
+    # Delimiters that separate "words" within a token
+    local delimiters='/:,@()[]='
+    
     local word="${LBUFFER##* }"
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
     local queryfile=$(mktemp)
     
-    # Write word to file to avoid escaping issues
-    printf '%s' "$word" > "$queryfile"
+    # Get suffix after last delimiter for the fzf query
+    # If word ends with delimiter, query is empty
+    local query="$word"
+    if [[ "$word" == *[$delimiters] ]]; then
+        # Ends with delimiter - no query
+        query=""
+    elif [[ "$word" == *[$delimiters]* ]]; then
+        # Has delimiter - use part after last delimiter
+        query="${word##*[$delimiters]}"
+    fi
+    
+    # Write query to file to avoid escaping issues
+    printf '%s' "$query" > "$queryfile"
     
     # Centered popup
     # --no-sort keeps input order, --tiebreak=index preserves order for equal scores
     # --track keeps selected item in view while filtering
+    # --exact disables fuzzy matching
     tmux display-popup -E -B -w 25% -h 40% -x C -y C \
         "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' | fzf --exact --reverse --no-sort --track --query=\"\$(cat '$queryfile')\" \
         --border=rounded \
@@ -34,9 +49,12 @@ _gc_complete() {
         # Copy to wayland clipboard
         echo -n "$selection" | wl-copy 2>/dev/null
         
-        if [[ -n "$word" ]]; then
-            LBUFFER="${LBUFFER%$word}$selection"
+        # Use same query logic for overlap detection
+        if [[ -n "$query" && "$selection" == "$query"* ]]; then
+            # Strip the query prefix to avoid duplication
+            LBUFFER="${LBUFFER}${selection#$query}"
         else
+            # Just append
             LBUFFER="${LBUFFER}${selection}"
         fi
     fi

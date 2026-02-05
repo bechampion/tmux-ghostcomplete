@@ -34,12 +34,13 @@ This project was created from scratch through conversation with [Claude](https:/
 
 Ever had a long path, URL, or identifier on screen and wished you could just autocomplete it without copy-pasting? **tmux-ghostcomplete** does exactly that.
 
-Press `Ctrl+n` and a fuzzy finder popup appears with all the text tokens visible in your current tmux pane. Start typing to filter, press Enter to insert the selection into your command line.
+Press `Ctrl+n` and a popup appears with all the text tokens visible in your current tmux pane. Start typing to filter, press Enter to insert the selection into your command line.
 
 ### Features
 
 - **Screen-aware** - Extracts all visible text from your tmux pane
-- **Fuzzy matching** - Uses fzf for fast, fuzzy filtering
+- **Exact matching** - Uses fzf with exact substring matching (no fuzzy)
+- **Smart completion** - Intelligently handles delimiters to avoid duplication
 - **Floating popup** - Clean, centered popup that doesn't disrupt your workflow
 - **Clipboard integration** - Selected text is also copied to your Wayland clipboard
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
@@ -115,11 +116,133 @@ antigen bundle bechampion/tmux-ghostcomplete
 1. Open a tmux session
 2. Have some text visible on screen (commands, output, logs, etc.)
 3. Press `Ctrl+n`
-4. Type to fuzzy filter the tokens
+4. Type to filter the tokens (exact matching)
 5. Press `Enter` to insert the selection
 6. Press `Escape` to cancel
 
 The selected text is also copied to your clipboard (Wayland).
+
+---
+
+## Smart Completion Behavior
+
+The plugin intelligently handles text insertion based on delimiters to avoid duplication.
+
+### Delimiters
+
+The following characters are recognized as delimiters:
+
+```
+/ : , @ ( ) [ ] =
+```
+
+### How It Works
+
+When you press `Ctrl+n`, the plugin looks at what you've typed and:
+
+1. **Extracts the query** - Uses only the text after the last delimiter for filtering
+2. **Avoids duplication** - When inserting, strips any overlapping prefix
+
+### Examples
+
+#### Building URLs
+
+```
+# You type:
+curl http://
+
+# Popup shows all tokens (no filter since you ended with /)
+# You select: 192.168.1.100
+
+# Result:
+curl http://192.168.1.100
+```
+
+```
+# You type:
+curl http://192
+
+# Popup filters to tokens containing "192"
+# You select: 192.168.1.100
+
+# Result (192 is stripped to avoid duplication):
+curl http://192.168.1.100
+```
+
+#### Building Paths
+
+```
+# You type:
+cd /home/user/
+
+# Popup shows all tokens (no filter)
+# You select: Projects
+
+# Result:
+cd /home/user/Projects
+```
+
+```
+# You type:
+cat /var/log/sys
+
+# Popup filters to tokens containing "sys"
+# You select: syslog
+
+# Result:
+cat /var/log/syslog
+```
+
+#### Email Addresses
+
+```
+# You type:
+git config user.email user@
+
+# Popup shows all tokens (no filter)
+# You select: example.com
+
+# Result:
+git config user.email user@example.com
+```
+
+#### Simple Completion (No Delimiters)
+
+```
+# You type:
+kubectl get dep
+
+# Popup filters to tokens containing "dep"
+# You select: deployments
+
+# Result:
+kubectl get deployments
+```
+
+```
+# You type (empty):
+git clone 
+
+# Popup shows all tokens
+# You select: git@github.com:user/repo.git
+
+# Result:
+git clone git@github.com:user/repo.git
+```
+
+### Customizing Delimiters
+
+You can modify the delimiter list in `tmux-ghostcomplete.plugin.zsh`:
+
+```zsh
+# Default delimiters
+local delimiters='/:,@()[]='
+
+# Add more delimiters (e.g., #, ?, &, -)
+local delimiters='/:,@()[]=#?&-'
+```
+
+---
 
 ## Configuration
 
@@ -262,13 +385,6 @@ On a typical terminal with ~50-100 lines visible, tokenization completes in **<1
 
 ---
 
-## How It Works
-
-1. **Capture** - Uses `tmux capture-pane` to get all visible text
-2. **Tokenize** - A fast `awk` script extracts words, removing brackets/punctuation
-3. **Filter** - `fzf` provides fuzzy matching in a floating popup
-4. **Insert** - Selected text replaces the current word in your command line
-
 ## Troubleshooting
 
 ### Popup doesn't appear
@@ -278,6 +394,15 @@ On a typical terminal with ~50-100 lines visible, tokenization completes in **<1
 ### No tokens showing
 - There might not be any text longer than 4 characters on screen
 - Try reducing the minimum token length
+
+### Escape key causes issues
+If pressing Escape causes your shell to enter vi command mode or ring a bell, add this to your `~/.zshrc`:
+
+```zsh
+bindkey '^[' redisplay
+```
+
+This makes Escape do nothing (just redraws the prompt) while preserving Alt+key combinations.
 
 ### Slow popup
 - The script is already optimized, but very large panes might be slower
