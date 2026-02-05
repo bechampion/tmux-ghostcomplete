@@ -16,7 +16,9 @@ _gc_complete() {
         --border=rounded \
         --pointer=\"▶\" \
         --prompt=\"󰊠 \" \
-        --color=\"hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D\" \
+        --header=\"👻 GhostComplete\" \
+        --header-first \
+        --color=\"hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D,header:#7E9CD8\" \
         --highlight-line > \"$tmpfile\"'"
     
     local selection=$(cat "$tmpfile")
