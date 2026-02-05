@@ -3,7 +3,8 @@
 # Triggered with Ctrl+n
 
 _gc_complete() {
-    [[ -z "$TMUX" ]] && return
+    # Ensure we're in tmux
+    [[ -z "$TMUX" ]] && return 0
     
     local word="${LBUFFER##* }"
     local pane_id=$(tmux display-message -p '#{pane_id}')
@@ -23,7 +24,7 @@ _gc_complete() {
         --pointer='▶' \
         --prompt='󰓾 ' \
         --color='hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D,label:#7E9CD8' \
-        --highlight-line > '$tmpfile'"
+        --highlight-line > '$tmpfile' 2>/dev/null; true"
     
     local selection=$(cat "$tmpfile" 2>/dev/null)
     rm -f "$tmpfile" "$queryfile"
@@ -40,6 +41,7 @@ _gc_complete() {
     fi
     
     zle redisplay
+    return 0
 }
 
 zle -N _gc_complete
