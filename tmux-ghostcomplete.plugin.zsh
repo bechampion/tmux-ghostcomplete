@@ -61,7 +61,6 @@ if [[ "\$mode" == "clipboard" ]]; then
         --pointer='▸' \\
         --prompt='📋 ' \\
         --header='[Tab: back to tokens]' \\
-        --header-first \\
         --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,header:#54546D' \\
         > "\$tmpfile" 2>/dev/null
     
@@ -93,7 +92,6 @@ else
         --pointer='▸' \\
         --prompt='❯ ' \\
         --header='[Tab: clipboard]' \\
-        --header-first \\
         --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,header:#54546D' \\
         > "\$tmpfile" 2>/dev/null
     
