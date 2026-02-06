@@ -2,7 +2,14 @@
 # Screen-aware autocomplete using styled tmux popup + fzf
 # Triggered with Ctrl+n
 # Tab switches to clipboard history (requires cliphist)
-# Ctrl+x opens nvim to edit command (loads last failed command if prompt is empty)
+# Ctrl+x opens nvim to edit command (loads last failed command if prompt is empty AND last command failed)
+
+# Store last exit code before it gets overwritten
+__gc_last_exit_code=0
+__gc_precmd() {
+    __gc_last_exit_code=$?
+}
+precmd_functions+=(__gc_precmd)
 
 _gc_complete() {
     # Ensure we're in tmux
@@ -36,12 +43,12 @@ _gc_complete() {
     
     # Determine command to edit:
     # - If prompt has content, use that
-    # - If prompt is empty, use last command from history
+    # - If prompt is empty AND last command failed, use last command from history
     local current_cmd="${LBUFFER}${RBUFFER}"
     local editing_last_cmd=0
     
-    if [[ -z "$current_cmd" ]]; then
-        # Prompt is empty - get the last command from history
+    if [[ -z "$current_cmd" && $__gc_last_exit_code -ne 0 ]]; then
+        # Prompt is empty AND last command failed - get the last command from history
         local last_cmd=$(fc -ln -1 2>/dev/null | sed 's/^[[:space:]]*//')
         printf '%s' "$last_cmd" > "$cmdfile"
         editing_last_cmd=1
@@ -49,7 +56,7 @@ _gc_complete() {
         printf '%s' "$current_cmd" > "$cmdfile"
     fi
     
-    # Set title based on whether we're editing last command
+    # Set title based on whether we're editing last failed command
     if [[ $editing_last_cmd -eq 1 ]]; then
         echo " 👻 GhostComplete ~ Edit last cmd " > "$titlefile"
     else
@@ -127,7 +134,7 @@ while true; do
             break
         fi
     else
-        # Tokens mode - show different label if editing last command
+        # Tokens mode - show different label if editing last failed command
         if [[ "\$editing_last_cmd" == "1" ]]; then
             label='[ Tab: clipboard | C-x: edit last cmd ]'
         else
