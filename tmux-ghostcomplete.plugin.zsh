@@ -2,7 +2,7 @@
 # Screen-aware autocomplete using styled tmux popup + fzf
 # Triggered with Ctrl+n
 # Tab switches to clipboard history (requires cliphist)
-# Ctrl+x opens nvim to edit command
+# Ctrl+x opens nvim to edit command (loads last failed command if prompt is empty)
 
 _gc_complete() {
     # Ensure we're in tmux
@@ -33,8 +33,19 @@ _gc_complete() {
     # Write current buffer words to exclude file (one per line)
     printf '%s' "$LBUFFER $RBUFFER" | tr ' ' '\n' | grep -v '^$' > "$excludefile"
     
-    # Write current command line to file for potential editing
-    printf '%s' "${LBUFFER}${RBUFFER}" > "$cmdfile"
+    # Determine command to edit:
+    # - If prompt has content, use that
+    # - If prompt is empty and last command failed, use last command from history
+    local current_cmd="${LBUFFER}${RBUFFER}"
+    local last_exit_code=$?
+    
+    if [[ -z "$current_cmd" ]]; then
+        # Prompt is empty - get the last command from history
+        local last_cmd=$(fc -ln -1 2>/dev/null | sed 's/^[[:space:]]*//')
+        printf '%s' "$last_cmd" > "$cmdfile"
+    else
+        printf '%s' "$current_cmd" > "$cmdfile"
+    fi
     
     # Track which mode was used
     echo "tokens" > "$modefile"
