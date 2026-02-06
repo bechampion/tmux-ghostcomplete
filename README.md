@@ -577,15 +577,23 @@ Press `Ctrl+x` while in the GhostComplete popup to open your current command lin
 
 ### How it works
 
+**With content in prompt:**
 1. Press `Ctrl+n` to open GhostComplete
 2. Press `Ctrl+x` to switch to editor mode
 3. nvim opens with your current command line
 4. Edit the command as needed
 5. Save and quit (`:wq`) to apply changes
-6. The edited command replaces your command line
 
-### Example
+**With empty prompt (quick fix for failed commands):**
+1. Run a command that fails
+2. With empty prompt, press `Ctrl+n` then `Ctrl+x`
+3. nvim opens with the **last command from history**
+4. Fix the error and save (`:wq`)
+5. The fixed command is ready to run
 
+### Examples
+
+**Editing current command:**
 ```
 # You have this complex command:
 $ kubectl get pods -n production | grep -E "api|web" | awk '{print $1}'
@@ -594,6 +602,18 @@ $ kubectl get pods -n production | grep -E "api|web" | awk '{print $1}'
 # nvim opens with the command
 # Edit it freely with full vim motions
 # :wq to save and return to shell
+```
+
+**Fixing a failed command:**
+```
+# You run a command with a typo:
+$ kubetcl get pods
+zsh: command not found: kubetcl
+
+# Prompt is now empty, press Ctrl+n, then Ctrl+x
+# nvim opens with "kubetcl get pods"
+# Fix the typo: kubectl get pods
+# :wq and the fixed command is ready
 ```
 
 ### nvim Configuration
@@ -608,12 +628,14 @@ This keeps the popup fast and avoids cluttering your filesystem.
 
 ### Use Cases
 
+- **Fix failed commands** - Quickly edit and re-run commands that errored
 - **Complex pipelines** - Edit long commands with multiple pipes
 - **Fix typos** - Use vim motions to quickly fix errors
 - **Restructure commands** - Rearrange arguments and flags
 - **Multi-cursor editing** - Use vim macros for repetitive edits
 
 ---
+
 
 ## Troubleshooting
 
