@@ -60,8 +60,10 @@ if [[ "\$mode" == "clipboard" ]]; then
         --no-separator \\
         --pointer='▸' \\
         --prompt='📋 ' \\
-        --header='[Tab: back to tokens]' \\
-        --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,header:#54546D' \\
+        --border=bottom \\
+        --border-label='[ Tab: tokens ]' \\
+        --border-label-pos=0:bottom \\
+        --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D' \\
         > "\$tmpfile" 2>/dev/null
     
     # Check if Tab was pressed
@@ -91,8 +93,10 @@ else
         --no-separator \\
         --pointer='▸' \\
         --prompt='❯ ' \\
-        --header='[Tab: clipboard]' \\
-        --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,header:#54546D' \\
+        --border=bottom \\
+        --border-label='[ Tab: clipboard ]' \\
+        --border-label-pos=0:bottom \\
+        --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D' \\
         > "\$tmpfile" 2>/dev/null
     
     # Check if Tab was pressed
