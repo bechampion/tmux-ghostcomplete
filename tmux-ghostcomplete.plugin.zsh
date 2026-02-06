@@ -1,5 +1,5 @@
 # tmux-ghostcomplete.plugin.zsh
-# Screen-aware autocomplete using styled tmux popup + fzf
+# Screen-aware autocomplete using styled tmux popup + gum
 # Triggered with Ctrl+n
 # Tab switches to clipboard history (requires cliphist)
 
@@ -13,154 +13,131 @@ _gc_complete() {
     local word="${LBUFFER##* }"
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
-    local queryfile=$(mktemp)
     local excludefile=$(mktemp)
+    local tokensfile=$(mktemp)
     local modefile=$(mktemp)
     
-    # Get suffix after last delimiter for the fzf query
-    # If word ends with delimiter, query is empty
+    # Get suffix after last delimiter for the query
     local query="$word"
     if [[ "$word" == *[$delimiters] ]]; then
-        # Ends with delimiter - no query
         query=""
     elif [[ "$word" == *[$delimiters]* ]]; then
-        # Has delimiter - use part after last delimiter
         query="${word##*[$delimiters]}"
     fi
-    
-    # Write query to file to avoid escaping issues
-    printf '%s' "$query" > "$queryfile"
     
     # Write current buffer words to exclude file (one per line)
     printf '%s' "$LBUFFER $RBUFFER" | tr ' ' '\n' | grep -v '^$' > "$excludefile"
     
-    # Track which mode was used (tokens or clipboard)
+    # Pre-generate tokens
+    ~/.local/bin/tmux-ghostcomplete '' "$pane_id" "$excludefile" | grep -v '^$' > "$tokensfile"
+    
+    # Track which mode was used
     echo "tokens" > "$modefile"
     
-    # Create a wrapper script that handles both modes
+    # Create wrapper script that handles both modes with gum
     local wrapper=$(mktemp)
-    cat > "$wrapper" << WRAPPER
+    cat > "$wrapper" << 'WRAPPER'
 #!/bin/bash
-modefile="$modefile"
-tmpfile="$tmpfile"
-queryfile="$queryfile"
-pane_id="$pane_id"
-excludefile="$excludefile"
+modefile="$1"
+tmpfile="$2"
+tokensfile="$3"
+query="$4"
 
-mode=\$(cat "\$modefile")
+mode=$(cat "$modefile")
 
-if [[ "\$mode" == "clipboard" ]]; then
-    # Clipboard mode
-    cliphist list | fzf --exact \\
-        --reverse \\
-        --no-sort \\
-        --bind 'tab:become:echo TAB_PRESSED' \\
-        --bind 'esc:abort' \\
-        --no-info \\
-        --no-separator \\
-        --pointer='▸' \\
-        --prompt='📋 ' \\
-        --border=bottom \\
-        --border-label='[ Tab: tokens ]' \\
-        --border-label-pos=0:bottom \\
-        --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D' \\
-        > "\$tmpfile" 2>/dev/null
+run_gum() {
+    local input_file="$1"
+    local prompt="$2"
+    local footer="$3"
+    local init_value="$4"
     
-    # Check if Tab was pressed
-    if grep -q "TAB_PRESSED" "\$tmpfile" 2>/dev/null; then
-        echo "tokens" > "\$modefile"
-        > "\$tmpfile"
-        exec "\$0"
-    fi
+    local value_arg=""
+    [[ -n "$init_value" ]] && value_arg="--value=$init_value"
     
-    # Decode the cliphist selection
-    if [[ -s "\$tmpfile" ]]; then
-        selected=\$(cat "\$tmpfile")
-        echo "clipboard" > "\$modefile"
-        cliphist decode <<< "\$selected" > "\$tmpfile"
-    fi
-else
-    # Tokens mode (default)
-    ~/.local/bin/tmux-ghostcomplete "\$(cat "\$queryfile")" "\$pane_id" "\$excludefile" | fzf --exact \\
-        --reverse \\
-        --no-sort \\
-        --track \\
-        --print-query \\
-        --query="\$(cat "\$queryfile")" \\
-        --bind 'tab:become:echo TAB_PRESSED' \\
-        --bind 'esc:abort' \\
-        --no-info \\
-        --no-separator \\
-        --pointer='▸' \\
-        --prompt='❯ ' \\
-        --border=bottom \\
-        --border-label='[ Tab: clipboard ]' \\
-        --border-label-pos=0:bottom \\
-        --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D' \\
-        > "\$tmpfile" 2>/dev/null
+    # gum filter with footer message appended to input
+    (cat "$input_file"; echo ""; echo "$footer") | gum filter \
+        --header '' \
+        --prompt "$prompt" \
+        --prompt.foreground '#957FB8' \
+        --indicator '▸' \
+        --indicator.foreground '#E6C384' \
+        --match.foreground '#E6C384' \
+        --text.foreground '#DCD7BA' \
+        --cursor-text.foreground '#DCD7BA' \
+        --cursor-text.background '#2A2A37' \
+        --placeholder 'Filter...' \
+        --placeholder.foreground '#54546D' \
+        --height 12 \
+        --no-fuzzy \
+        --strict \
+        $value_arg
+}
+
+while true; do
+    mode=$(cat "$modefile")
     
-    # Check if Tab was pressed
-    if grep -q "TAB_PRESSED" "\$tmpfile" 2>/dev/null; then
-        echo "clipboard" > "\$modefile"
-        > "\$tmpfile"
-        exec "\$0"
+    if [[ "$mode" == "clipboard" ]]; then
+        # Clipboard mode
+        cliphist list > /tmp/clip_input.tmp
+        result=$(run_gum "/tmp/clip_input.tmp" "📋 " "[Tab: tokens]" "")
+        rm -f /tmp/clip_input.tmp
+        
+        if [[ "$result" == "[Tab: tokens]" ]]; then
+            echo "tokens" > "$modefile"
+            continue
+        elif [[ -n "$result" ]]; then
+            echo "clipboard" > "$modefile"
+            cliphist decode <<< "$result" > "$tmpfile"
+            break
+        else
+            break
+        fi
+    else
+        # Tokens mode
+        result=$(run_gum "$tokensfile" "❯ " "[Tab: clipboard]" "$query")
+        
+        if [[ "$result" == "[Tab: clipboard]" ]]; then
+            echo "clipboard" > "$modefile"
+            continue
+        elif [[ -n "$result" ]]; then
+            echo "$result" > "$tmpfile"
+            break
+        else
+            break
+        fi
     fi
-fi
+done
 WRAPPER
     chmod +x "$wrapper"
     
-    # Styled tmux popup
+    # Run in tmux popup
     tmux display-popup -E -w 35% -h 30% \
         -b rounded \
         -S 'fg=#54546D' \
         -s 'bg=#1F1F28' \
         -T ' 👻 GhostComplete ' \
-        "$wrapper"
+        "$wrapper '$modefile' '$tmpfile' '$tokensfile' '$query'"
     
-    # Read the mode and result
+    # Read results
     local mode=$(cat "$modefile" 2>/dev/null)
-    local final_query selection
+    local selection=$(cat "$tmpfile" 2>/dev/null)
+    selection="${selection%%[$'\n\r']*}"
+    selection="${selection%"${selection##*[![:space:]]}"}"
     
-    if [[ "$mode" == "clipboard" ]]; then
-        # Clipboard mode - entire file is the selection (already decoded)
-        selection=$(cat "$tmpfile" 2>/dev/null)
-        selection="${selection%%[$'\n\r']*}"
-        selection="${selection%"${selection##*[![:space:]]}"}"
-        final_query=""
-    else
-        # Tokens mode - first line is query, second is selection
-        final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null)
-        selection=$(sed -n '2p' "$tmpfile" 2>/dev/null)
-        final_query="${final_query%%[$'\n\r']*}"
-        final_query="${final_query%"${final_query##*[![:space:]]}"}"
-        selection="${selection%%[$'\n\r']*}"
-        selection="${selection%"${selection##*[![:space:]]}"}"
-    fi
-    
-    rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper"
+    rm -f "$tmpfile" "$excludefile" "$tokensfile" "$modefile" "$wrapper"
     
     if [[ -n "$selection" ]]; then
-        # Copy to wayland clipboard
+        # Copy to clipboard
         printf '%s' "$selection" | wl-copy 2>/dev/null
         
-        # If from clipboard mode, just append
+        # Insert logic
         if [[ "$mode" == "clipboard" ]]; then
             LBUFFER="${LBUFFER}${selection}"
-        # If selection contains what we typed, replace the whole word
         elif [[ -n "$word" && "$selection" == *"$word"* ]]; then
             LBUFFER="${LBUFFER%$word}$selection"
-        # If user changed the query (deleted/modified it), replace just the query part
-        elif [[ "$final_query" != "$query" ]]; then
-            if [[ -n "$query" ]]; then
-                LBUFFER="${LBUFFER%$query}$selection"
-            else
-                LBUFFER="${LBUFFER}${selection}"
-            fi
-        elif [[ -z "$query" ]]; then
-            LBUFFER="${LBUFFER}${selection}"
-        elif [[ "$selection" == "$query"* ]]; then
+        elif [[ -n "$query" && "$selection" == "$query"* ]]; then
             LBUFFER="${LBUFFER}${selection#$query}"
-        elif [[ "$selection" == *"$query"* ]]; then
+        elif [[ -n "$query" && "$selection" == *"$query"* ]]; then
             LBUFFER="${LBUFFER%$query}$selection"
         else
             LBUFFER="${LBUFFER}${selection}"
