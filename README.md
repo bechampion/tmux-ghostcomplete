@@ -642,6 +642,78 @@ echo "GhostComplete" | gum style --border rounded --padding "0 1" --foreground "
 
 ---
 
+## Clipboard History Integration
+
+GhostComplete integrates with [cliphist](https://github.com/sentriz/cliphist) to access your clipboard history directly from the popup.
+
+### How it works
+
+While in the GhostComplete popup:
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Toggle between **tokens** and **clipboard history** |
+| `Enter` | Select and insert |
+| `Escape` | Close popup |
+
+### Modes
+
+**Tokens mode** (default):
+```
+╭─ 👻 GhostComplete ────────────────╮
+│ [Tab: clipboard]                  │
+│ ❯ search query                    │
+│ ▸ token-from-screen               │
+╰───────────────────────────────────╯
+```
+
+**Clipboard mode** (after pressing Tab):
+```
+╭─ 👻 GhostComplete ────────────────╮
+│ [Tab: back to tokens]             │
+│ 📋 search query                   │
+│ ▸ clipboard-entry-1               │
+╰───────────────────────────────────╯
+```
+
+### Requirements
+
+Clipboard history requires [cliphist](https://github.com/sentriz/cliphist):
+
+<details>
+<summary><b>Arch Linux</b></summary>
+
+```bash
+pacman -S cliphist
+```
+</details>
+
+<details>
+<summary><b>From source (Go)</b></summary>
+
+```bash
+go install go.senan.xyz/cliphist@latest
+```
+</details>
+
+### Setting up cliphist
+
+cliphist needs to be running to capture clipboard history. Add this to your Sway/Hyprland config:
+
+**Sway:**
+```bash
+exec wl-paste --type text --watch cliphist store
+exec wl-paste --type image --watch cliphist store
+```
+
+**Hyprland:**
+```bash
+exec-once = wl-paste --type text --watch cliphist store
+exec-once = wl-paste --type image --watch cliphist store
+```
+
+---
+
 ## Troubleshooting
 
 ### Popup doesn't appear
