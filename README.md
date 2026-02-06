@@ -46,6 +46,7 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Search at top** - Clean, intuitive layout with search input at the top
 - **Clipboard integration** - Selected text is also copied to your Wayland clipboard
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
+- **Command line editor** - Press Ctrl+x to edit your command in nvim
 
 ## Requirements
 
@@ -494,6 +495,7 @@ The tokenizer is optimized for speed:
 On a typical terminal with ~50-100 lines visible, tokenization completes in **<10ms**.
 
 ---
+---
 ## Clipboard History Integration
 
 GhostComplete integrates with [cliphist](https://github.com/sentriz/cliphist) to access your clipboard history directly from the popup.
@@ -505,6 +507,7 @@ While in the GhostComplete popup:
 | Key | Action |
 |-----|--------|
 | `Tab` | Toggle between **tokens** and **clipboard history** |
+| `Ctrl+x` | Open **nvim** to edit the command line |
 | `Enter` | Select and insert |
 | `Escape` | Close popup |
 
@@ -513,18 +516,20 @@ While in the GhostComplete popup:
 **Tokens mode** (default):
 ```
 ╭─ 👻 GhostComplete ────────────────╮
-│ [Tab: clipboard]                  │
 │ ❯ search query                    │
 │ ▸ token-from-screen               │
+│ ────────────────────────────────  │
+│ [ Tab: clipboard | C-x: edit ]    │
 ╰───────────────────────────────────╯
 ```
 
 **Clipboard mode** (after pressing Tab):
 ```
 ╭─ 👻 GhostComplete ────────────────╮
-│ [Tab: back to tokens]             │
 │ 📋 search query                   │
 │ ▸ clipboard-entry-1               │
+│ ────────────────────────────────  │
+│ [ Tab: tokens | C-x: edit ]       │
 ╰───────────────────────────────────╯
 ```
 
@@ -563,6 +568,50 @@ exec wl-paste --type image --watch cliphist store
 exec-once = wl-paste --type text --watch cliphist store
 exec-once = wl-paste --type image --watch cliphist store
 ```
+
+---
+
+## Command Line Editor
+
+Press `Ctrl+x` while in the GhostComplete popup to open your current command line in **nvim** for editing.
+
+### How it works
+
+1. Press `Ctrl+n` to open GhostComplete
+2. Press `Ctrl+x` to switch to editor mode
+3. nvim opens with your current command line
+4. Edit the command as needed
+5. Save and quit (`:wq`) to apply changes
+6. The edited command replaces your command line
+
+### Example
+
+```
+# You have this complex command:
+$ kubectl get pods -n production | grep -E "api|web" | awk '{print $1}'
+
+# Press Ctrl+n, then Ctrl+x
+# nvim opens with the command
+# Edit it freely with full vim motions
+# :wq to save and return to shell
+```
+
+### nvim Configuration
+
+The editor opens with a minimal configuration:
+- No swap files
+- No backup files
+- No undo files
+- No status line (clean look)
+
+This keeps the popup fast and avoids cluttering your filesystem.
+
+### Use Cases
+
+- **Complex pipelines** - Edit long commands with multiple pipes
+- **Fix typos** - Use vim motions to quickly fix errors
+- **Restructure commands** - Rearrange arguments and flags
+- **Multi-cursor editing** - Use vim macros for repetitive edits
 
 ---
 
