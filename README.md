@@ -517,6 +517,114 @@ This makes Escape do nothing (just redraws the prompt) while preserving Alt+key 
 - The script is already optimized, but very large panes might be slower
 - Consider reducing scrollback if you have very large buffers
 
+## Alternative: Using gum instead of fzf
+
+[gum](https://github.com/charmbracelet/gum) is a tool from Charm.sh that provides beautiful terminal UI components. You can use `gum filter` as an alternative to fzf for a different look and feel.
+
+### Why gum?
+
+- **Feels faster** - Bubble Tea's rendering is highly optimized
+- **Rich styling** - More granular control over colors and appearance
+- **Part of Charm ecosystem** - Consistent with other Charm tools
+
+### Why we chose fzf?
+
+- **Single Escape to close** - gum filter requires double-Escape (first blurs input, second exits)
+- **Custom keybindings** - fzf's `--bind` allows `esc:abort` for immediate exit
+- **More mature** - fzf has been around longer with more edge cases handled
+
+### gum version (experimental)
+
+If you want to try gum, here's an experimental version you can save as a separate plugin:
+
+```zsh
+# gum-ghostcomplete.plugin.zsh
+# Requires: gum (https://github.com/charmbracelet/gum)
+
+_gum_ghostcomplete() {
+    [[ -z "$TMUX" ]] && return 0
+    
+    local delimiters='/:,@()[]="'"'"
+    local word="${LBUFFER##* }"
+    local pane_id=$(tmux display-message -p '#{pane_id}')
+    local tmpfile=$(mktemp)
+    local excludefile=$(mktemp)
+    local tokensfile=$(mktemp)
+    
+    local query="$word"
+    if [[ "$word" == *[$delimiters] ]]; then
+        query=""
+    elif [[ "$word" == *[$delimiters]* ]]; then
+        query="${word##*[$delimiters]}"
+    fi
+    
+    printf '%s' "$LBUFFER $RBUFFER" | tr ' ' '\n' | grep -v '^$' > "$excludefile"
+    ~/.local/bin/tmux-ghostcomplete '' "$pane_id" "$excludefile" | grep -v '^$' > "$tokensfile"
+    
+    # gum filter with Kanagawa colors
+    local gum_cmd="gum filter \
+        --prompt '❯ ' \
+        --prompt.foreground '#957FB8' \
+        --indicator '▸' \
+        --indicator.foreground '#E6C384' \
+        --match.foreground '#E6C384' \
+        --text.foreground '#DCD7BA' \
+        --cursor-text.foreground '#1F1F28' \
+        --cursor-text.background '#7E9CD8' \
+        --placeholder 'Filter...' \
+        --placeholder.foreground '#54546D' \
+        --height 10 \
+        --no-fuzzy \
+        --strict"
+    
+    [[ -n "$query" ]] && gum_cmd="$gum_cmd --value '$query'"
+    
+    tmux display-popup -E -w 35% -h 30% \
+        -b rounded \
+        -S 'fg=#54546D' \
+        -s 'bg=#1F1F28' \
+        -T ' 👻 GhostComplete (gum) ' \
+        "cat '$tokensfile' | $gum_cmd > '$tmpfile'"
+    
+    local selection=$(cat "$tmpfile" 2>/dev/null | tr -d '\n\r')
+    rm -f "$tmpfile" "$excludefile" "$tokensfile"
+    
+    if [[ -n "$selection" ]]; then
+        printf '%s' "$selection" | wl-copy 2>/dev/null
+        if [[ -n "$word" && "$selection" == *"$word"* ]]; then
+            LBUFFER="${LBUFFER%$word}$selection"
+        elif [[ -n "$query" && "$selection" == "$query"* ]]; then
+            LBUFFER="${LBUFFER}${selection#$query}"
+        elif [[ -n "$query" && "$selection" == *"$query"* ]]; then
+            LBUFFER="${LBUFFER%$query}$selection"
+        else
+            LBUFFER="${LBUFFER}${selection}"
+        fi
+    fi
+    
+    zle redisplay
+    return 0
+}
+
+zle -N _gum_ghostcomplete
+bindkey '^g' _gum_ghostcomplete  # Use Ctrl+g to avoid conflict
+```
+
+### gum effects and styling
+
+gum offers additional UI components you could integrate:
+
+```bash
+# Spinners (for loading states)
+gum spin -s dot --title "Loading..." -- sleep 1
+
+# Styled text
+echo "GhostComplete" | gum style --border rounded --padding "0 1" --foreground "#E6C384"
+
+# Available spinner types
+# dot, line, minidot, jump, pulse, points, globe, moon, monkey, meter, hamburger
+```
+
 ## Related Projects
 
 - [fzf](https://github.com/junegunn/fzf) - The fuzzy finder powering this plugin
