@@ -48,7 +48,7 @@ while true; do
     mode=\$(cat "\$modefile")
     
     if [[ "\$mode" == "clipboard" ]]; then
-        # Clipboard mode
+        # Clipboard mode - strip the ID numbers for display, but keep full line for decode
         result=\$(cliphist list | fzf --exact \\
             --reverse \\
             --no-sort \\
@@ -60,6 +60,8 @@ while true; do
             --no-separator \\
             --pointer='▸' \\
             --prompt='📋 ' \\
+            --with-nth=2.. \\
+            --delimiter='\t' \\
             --border=bottom \\
             --border-label='[ Tab: tokens ]' \\
             --border-label-pos=0:bottom \\
@@ -70,7 +72,7 @@ while true; do
             continue
         elif [[ -n "\$result" ]]; then
             echo "clipboard" > "\$modefile"
-            # First line is query, second is selection - decode the selection
+            # First line is query, second is selection (with ID) - decode the selection
             clip_selection=\$(echo "\$result" | sed -n '2p')
             if [[ -n "\$clip_selection" ]]; then
                 echo "\$result" | head -1 > "\$tmpfile.query"
