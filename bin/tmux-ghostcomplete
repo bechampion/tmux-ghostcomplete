@@ -25,8 +25,8 @@ BEGIN {
     line = $0
     outline = $0
     
-    # Match URLs and git addresses
-    while (match(line, /https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+/)) {
+    # Match URLs and special schemes (http, https, ftp, file, git@, containerd, s3, etc.)
+    while (match(line, /https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+|containerd:\/\/[^ \t\[\]()]+|s3:\/\/[^ \t\[\]()]+/)) {
         url = substr(line, RSTART, RLENGTH)
         # Clean trailing punctuation from URLs
         gsub(/[,;:)\]"]+$/, "", url)
