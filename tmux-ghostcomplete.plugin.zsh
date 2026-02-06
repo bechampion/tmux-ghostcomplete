@@ -54,7 +54,7 @@ if [[ "\$mode" == "clipboard" ]]; then
     cliphist list | fzf --exact \\
         --reverse \\
         --no-sort \\
-        --bind 'tab:abort' \\
+        --bind 'tab:become:echo TAB_PRESSED' \\
         --bind 'esc:abort' \\
         --no-info \\
         --no-separator \\
@@ -65,11 +65,10 @@ if [[ "\$mode" == "clipboard" ]]; then
         --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,header:#54546D' \\
         > "\$tmpfile" 2>/dev/null
     
-    exitcode=\$?
-    
-    # If Tab was pressed (exit 130), switch back to tokens mode
-    if [[ \$exitcode -eq 130 ]]; then
+    # Check if Tab was pressed
+    if grep -q "TAB_PRESSED" "\$tmpfile" 2>/dev/null; then
         echo "tokens" > "\$modefile"
+        > "\$tmpfile"
         exec "\$0"
     fi
     
@@ -87,7 +86,7 @@ else
         --track \\
         --print-query \\
         --query="\$(cat "\$queryfile")" \\
-        --bind 'tab:abort' \\
+        --bind 'tab:become:echo TAB_PRESSED' \\
         --bind 'esc:abort' \\
         --no-info \\
         --no-separator \\
@@ -98,11 +97,10 @@ else
         --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,header:#54546D' \\
         > "\$tmpfile" 2>/dev/null
     
-    exitcode=\$?
-    
-    # If Tab was pressed (exit 130), switch to clipboard mode
-    if [[ \$exitcode -eq 130 ]]; then
+    # Check if Tab was pressed
+    if grep -q "TAB_PRESSED" "\$tmpfile" 2>/dev/null; then
         echo "clipboard" > "\$modefile"
+        > "\$tmpfile"
         exec "\$0"
     fi
 fi
