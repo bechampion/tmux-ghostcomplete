@@ -126,7 +126,7 @@ while true; do
             --no-info \\
             --no-separator \\
             --pointer='▸' \\
-            --prompt='📋 ' \\
+            --prompt=' ' \\
             --with-nth=2.. \\
             --delimiter='\t' \\
             --border=bottom \\
