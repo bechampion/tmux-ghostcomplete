@@ -24,7 +24,7 @@ This project was created from scratch through conversation with [Claude](https:/
 
 ## Demo
 
-![tmux-ghostcomplete demo](assets/demo.gif)
+[![asciicast](https://asciinema.org/a/zCySZyhdPkkzR83R.svg)](https://asciinema.org/a/zCySZyhdPkkzR83R)
 
 ---
 
