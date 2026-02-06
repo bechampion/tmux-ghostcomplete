@@ -83,6 +83,13 @@ while true; do
     
     if [[ "\$mode" == "editor" ]]; then
         # Editor mode - open nvim to edit command
+        # If editing last failed command, add explanatory comment at top
+        if [[ "\$editing_last_cmd" == "1" ]]; then
+            # Prepend comment to cmdfile
+            local original_cmd=\$(cat "\$cmdfile")
+            echo "# This command failed (exit code non-zero). Edit and save to retry." > "\$cmdfile"
+            echo "\$original_cmd" >> "\$cmdfile"
+        fi
         nvim -u NONE \\
             -c "set noswapfile" \\
             -c "set nobackup" \\
@@ -91,7 +98,13 @@ while true; do
             -c "set noruler" \\
             -c "set noshowcmd" \\
             -c "set shortmess+=F" \\
+            -c "set filetype=sh" \\
+            -c "syntax on" \\
             "\$cmdfile"
+        # Remove comment line if still present
+        if [[ "\$editing_last_cmd" == "1" ]]; then
+            sed -i '1{/^# This command failed/d}' "\$cmdfile"
+        fi
         break
     elif [[ "\$mode" == "clipboard" ]]; then
         # Clipboard mode
