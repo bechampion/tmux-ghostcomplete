@@ -24,9 +24,7 @@ This project was created from scratch through conversation with [Claude](https:/
 
 ## Demo
 
-<!-- Demo GIF -->
 ![tmux-ghostcomplete demo](assets/demo.gif)
-
 
 ---
 
@@ -43,17 +41,19 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Smart completion** - Intelligently handles delimiters to avoid duplication
 - **Styled floating popup** - Subtle rounded borders with Kanagawa-themed colors
 - **Single Escape to close** - Press Escape once to dismiss the popup
-- **Search at top** - Clean, intuitive layout with search input at the top
-- **Clipboard integration** - Selected text is also copied to your Wayland clipboard
-- **Fast** - Optimized with `sh` and single `awk` for minimal latency
+- **Clipboard history** - Press Tab to access clipboard history (via cliphist)
 - **Command line editor** - Press Ctrl+x to edit your command in nvim
+- **Edit failed commands** - Automatically loads last failed command for quick fixes
+- **Fast** - Optimized with `sh` and single `awk` for minimal latency
 
 ## Requirements
 
 - [tmux](https://github.com/tmux/tmux) (with `display-popup` support, v3.2+)
 - [fzf](https://github.com/junegunn/fzf)
 - [zsh](https://www.zsh.org/)
+- [cliphist](https://github.com/sentriz/cliphist) (optional, for clipboard history)
 - [wl-copy](https://github.com/bugaevc/wl-clipboard) (optional, for Wayland clipboard)
+- [nvim](https://neovim.io/) (optional, for command line editing)
 
 ## Installation
 
@@ -113,14 +113,28 @@ antigen bundle bechampion/tmux-ghostcomplete
 ```
 </details>
 
+---
+
 ## Usage
+
+### Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+n` | Open GhostComplete popup |
+| `Tab` | Toggle between **tokens** and **clipboard history** |
+| `Ctrl+x` | Open **nvim** to edit command line |
+| `Enter` | Select and insert |
+| `Escape` | Close popup |
+
+### Basic Usage
 
 1. Open a tmux session
 2. Have some text visible on screen (commands, output, logs, etc.)
 3. Press `Ctrl+n`
 4. Type to filter the tokens (exact matching)
 5. Press `Enter` to insert the selection
-6. Press `Escape` to cancel (single press!)
+6. Press `Escape` to cancel
 
 The selected text is also copied to your clipboard (Wayland).
 
@@ -136,29 +150,114 @@ The popup uses tmux's native styling for a clean, minimal look:
 │ ▸ matching-token-1                │
 │   matching-token-2                │
 │   matching-token-3                │
+│ ────────────────────────────────  │
+│ [ Tab: clipboard | C-x: edit ]    │
 ╰───────────────────────────────────╯
 ```
 
-### Features
+---
 
-| Element | Description |
-|---------|-------------|
-| **Rounded border** | Subtle `╭╮╰╯` corners |
-| **Dim border color** | `#54546D` - doesn't distract |
-| **Dark background** | `#1F1F28` - Kanagawa sumiInk1 |
-| **Title in border** | `👻 GhostComplete` |
-| **Search at top** | `--reverse` layout |
-| **Single Escape** | `--bind 'esc:abort'` |
-| **Compact size** | 35% width, 30% height |
+## Command Line Editor
+
+Press `Ctrl+x` while in the GhostComplete popup to open your command in **nvim** for editing.
+
+### Editing Current Command
+
+If you have text in your prompt, `Ctrl+x` opens it in nvim:
+
+```
+# You have this complex command:
+$ kubectl get pods -n production | grep -E "api|web" | awk '{print $1}'
+
+# Press Ctrl+n, then Ctrl+x
+# nvim opens with the command
+# Edit it with full vim motions
+# :wq to save and return to shell
+```
+
+### Editing Failed Commands
+
+If your prompt is **empty** and the **last command failed** (`$? != 0`), `Ctrl+x` automatically loads that failed command:
+
+```
+# You run a command with a typo:
+$ kubetcl get pods
+zsh: command not found: kubetcl
+
+# Prompt is now empty
+# Press Ctrl+n - notice the title shows "Edit last cmd"
+# Press Ctrl+x
+# nvim opens with "kubetcl get pods"
+# Fix the typo and :wq
+# The corrected command is ready to run!
+```
+
+The popup shows visual indicators when this mode is active:
+- **Title**: `👻 GhostComplete ~ Edit last cmd`
+- **Label**: `[ Tab: clipboard | C-x: edit last cmd ]`
+
+### nvim Configuration
+
+The editor opens with a minimal configuration for speed:
+- No swap files
+- No backup files  
+- No undo files
+- No status line
+
+### Use Cases
+
+- **Fix failed commands** - Quickly edit and re-run commands that errored
+- **Complex pipelines** - Edit long commands with multiple pipes
+- **Fix typos** - Use vim motions to quickly fix errors
+- **Restructure commands** - Rearrange arguments and flags
+
+---
+
+## Clipboard History
+
+Press `Tab` to toggle between screen tokens and clipboard history.
+
+### Modes
+
+**Tokens mode** (default) - Shows text from your visible tmux pane:
+```
+╭─ 👻 GhostComplete ────────────────╮
+│ ❯ search query                    │
+│ ▸ token-from-screen               │
+│ [ Tab: clipboard | C-x: edit ]    │
+╰───────────────────────────────────╯
+```
+
+**Clipboard mode** - Shows your clipboard history:
+```
+╭─ 👻 GhostComplete ────────────────╮
+│ 📋 search query                   │
+│ ▸ previous-clipboard-entry        │
+│ [ Tab: tokens | C-x: edit ]       │
+╰───────────────────────────────────╯
+```
+
+### Setting up cliphist
+
+Clipboard history requires [cliphist](https://github.com/sentriz/cliphist). Add this to your Sway/Hyprland config:
+
+**Sway:**
+```bash
+exec wl-paste --type text --watch cliphist store
+exec wl-paste --type image --watch cliphist store
+```
+
+**Hyprland:**
+```bash
+exec-once = wl-paste --type text --watch cliphist store
+exec-once = wl-paste --type image --watch cliphist store
+```
 
 ---
 
 ## Smart Completion Behavior
 
 The plugin intelligently handles text insertion based on delimiters to avoid duplication.
-
-
-![Smart completion demo](assets/smart-completion-demo.gif)
 
 ### Delimiters
 
@@ -182,17 +281,6 @@ When you press `Ctrl+n`, the plugin looks at what you've typed and:
 
 ```
 # You type:
-curl http://
-
-# Popup shows all tokens (no filter since you ended with /)
-# You select: 192.168.1.100
-
-# Result:
-curl http://192.168.1.100
-```
-
-```
-# You type:
 curl http://192
 
 # Popup filters to tokens containing "192"
@@ -206,17 +294,6 @@ curl http://192.168.1.100
 
 ```
 # You type:
-cd /home/user/
-
-# Popup shows all tokens (no filter)
-# You select: Projects
-
-# Result:
-cd /home/user/Projects
-```
-
-```
-# You type:
 cat /var/log/sys
 
 # Popup filters to tokens containing "sys"
@@ -226,125 +303,28 @@ cat /var/log/sys
 cat /var/log/syslog
 ```
 
-#### Email Addresses
-
-```
-# You type:
-git config user.email user@
-
-# Popup shows all tokens (no filter)
-# You select: example.com
-
-# Result:
-git config user.email user@example.com
-```
-
-#### Simple Completion (No Delimiters)
-
-```
-# You type:
-kubectl get dep
-
-# Popup filters to tokens containing "dep"
-# You select: deployments
-
-# Result:
-kubectl get deployments
-```
-
-```
-# You type (empty):
-git clone 
-
-# Popup shows all tokens
-# You select: git@github.com:user/repo.git
-
-# Result:
-git clone git@github.com:user/repo.git
-```
-
-#### Changing Query in Popup
-
-```
-# You type:
-curl http://192
-
-# Popup opens with "192" as query
-# You delete the query and type "example"
-# You select: example.com
-
-# Result (replaces the whole word since query changed):
-curl example.com
-```
-
-```
-# You type:
-kubectl get serv
-
-# Popup opens with "serv" as query
-# You clear query and select: deployments
-
-# Result (replaces "serv" with selection):
-kubectl get deployments
-```
-
-### Customizing Delimiters
-
-You can modify the delimiter list in `tmux-ghostcomplete.plugin.zsh`:
-
-```zsh
-# Default delimiters
-local delimiters='/:,@()[]="'"'"
-
-# Add more delimiters (e.g., #, ?, &, -)
-local delimiters='/:,@()[]="'"'"'#?&-'
-```
-
 ---
 
-### Token Exceptions
+## Token Exceptions
 
-The tokenizer preserves certain patterns intact instead of splitting them. These are defined in `bin/tmux-ghostcomplete`:
+The tokenizer preserves certain patterns intact instead of splitting them:
 
-| Exception | Pattern | Example |
-|-----------|---------|---------|
-| HTTP URLs | `http://...`, `https://...` | `https://github.com/user/repo` |
-| Git SSH | `git@...` | `git@github.com:user/repo.git` |
-| FTP URLs | `ftp://...` | `ftp://files.example.com/path` |
-| File URLs | `file://...` | `file:///home/user/doc.txt` |
-| IPv6 addresses | `xxxx:xxxx:...` | `2001:0db8:85a3::8a2e:0370:7334` |
+| Pattern | Example |
+|---------|---------|
+| `http://`, `https://` | `https://github.com/user/repo` |
+| `git@` | `git@github.com:user/repo.git` |
+| `ftp://`, `file://` | `ftp://files.example.com/path` |
+| `containerd://` | `containerd://k8s.io/container` |
+| `s3://` | `s3://bucket/path` |
+| IPv6 addresses | `2001:0db8:85a3::8a2e:0370:7334` |
 
-**Adding New Exceptions:**
-
-Edit `bin/tmux-ghostcomplete` and add patterns to the regex:
-
-```awk
-# Current pattern (in the while match line):
-/https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+/
-
-# To add s3:// URLs:
-/https?:\/\/[^ \t\[\]()]+|git@[^ \t\[\]()]+|ftp:\/\/[^ \t\[\]()]+|file:\/\/[^ \t\[\]()]+|s3:\/\/[^ \t\[\]()]+/
-```
-
-**Potential future exceptions to consider:**
-
-- `s3://bucket/path` - AWS S3 URLs
-- `gs://bucket/path` - Google Cloud Storage URLs  
-- `docker://image:tag` - Docker image references
-- `mailto:user@example.com` - Email links
-- `ssh://user@host` - SSH URLs
-- `redis://host:port` - Redis connection strings
-- `postgres://...` - Database connection strings
-- `arn:aws:...` - AWS ARNs
-- IP addresses with ports - `192.168.1.1:8080`
-
-To request a new exception, open an issue on GitHub!
+---
 
 ## Configuration
 
 ### Key Binding
 
-Change the trigger key by modifying the `bindkey` line in the plugin file:
+Change the trigger key in the plugin file:
 
 ```bash
 # Default: Ctrl+n
@@ -352,17 +332,13 @@ bindkey '^n' _gc_complete
 
 # Example: Ctrl+Space
 bindkey '^ ' _gc_complete
-
-# Example: Alt+c
-bindkey '^[c' _gc_complete
 ```
 
-### Popup Size and Position
+### Popup Size
 
-Modify these values in `tmux-ghostcomplete.plugin.zsh`:
+Modify in `tmux-ghostcomplete.plugin.zsh`:
 
 ```bash
-# Default: 35% width, 30% height, centered
 tmux display-popup -E -w 35% -h 30% \
     -b rounded \
     -S 'fg=#54546D' \
@@ -370,272 +346,19 @@ tmux display-popup -E -w 35% -h 30% \
     -T ' 👻 GhostComplete '
 ```
 
-Options:
-- `-w` - Width (percentage or columns)
-- `-h` - Height (percentage or rows)
-- `-b` - Border style: `single`, `rounded`, `double`, `heavy`, `none`
-- `-S` - Border style (fg/bg colors)
-- `-s` - Content style (fg/bg colors)
-- `-T` - Title displayed in border
-
 ### Colors (Kanagawa Theme)
 
-The popup uses tmux border styling + fzf colors that match [Kanagawa](https://github.com/rebelot/kanagawa.nvim):
-
-**tmux popup:**
-```bash
--S 'fg=#54546D'      # Border color (sumiInk6 - dim)
--s 'bg=#1F1F28'      # Background (sumiInk1 - dark)
-```
-
-**fzf colors:**
-```bash
---color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28'
-```
+The popup uses [Kanagawa](https://github.com/rebelot/kanagawa.nvim) colors:
 
 | Element | Color | Description |
 |---------|-------|-------------|
 | `bg` | `#1F1F28` | Background (sumiInk1) |
-| `fg` | `#DCD7BA` | Default text (fujiWhite) |
-| `bg+` | `#2A2A37` | Selected line background (sumiInk4) |
-| `fg+` | `#DCD7BA` | Selected line text (fujiWhite) |
+| `fg` | `#DCD7BA` | Text (fujiWhite) |
+| `bg+` | `#2A2A37` | Selected background (sumiInk4) |
 | `hl` | `#E6C384` | Match highlight (carpYellow) |
-| `hl+` | `#E6C384` | Selected match highlight (carpYellow) |
-| `pointer` | `#E6C384` | Pointer color (carpYellow) |
-| `prompt` | `#957FB8` | Prompt color (oniViolet) |
-| `gutter` | `#1F1F28` | Gutter background (sumiInk1) |
+| `prompt` | `#957FB8` | Prompt (oniViolet) |
 
 ---
-
-## The Tokenizer
-
-The tokenizer (`bin/tmux-ghostcomplete`) is responsible for extracting meaningful text from your terminal. It's written in POSIX `sh` with a single `awk` process for maximum performance.
-
-### How It Works
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  tmux capture   │────▶│   awk process   │────▶│  unique tokens  │
-│  (visible pane) │     │  (tokenize)     │     │  (to fzf)       │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-1. **Capture**: `tmux capture-pane -p` grabs all visible text from the current pane
-2. **Clean**: Removes brackets `[]`, parentheses `()`, colons `:`, and quotes `"`
-3. **Split**: Breaks text into whitespace-separated words
-4. **Filter**: Only keeps tokens longer than 4 characters
-5. **Dedupe**: Uses awk's associative array to output each unique token once
-
-### Source Code
-
-```sh
-#!/bin/sh
-target_pane="$2"
-
-if [ -n "$target_pane" ]; then
-    tmux capture-pane -t "$target_pane" -p
-else
-    tmux capture-pane -p
-fi | awk '
-{
-    # Replace brackets, parens, colons, quotes with spaces
-    gsub(/[\[\]():"]/, " ")
-    # Split into words
-    n = split($0, words)
-    for (i = 1; i <= n; i++) {
-        w = words[i]
-        # Only output tokens > 4 chars, deduplicated
-        if (length(w) > 4 && !seen[w]++) {
-            print w
-        }
-    }
-}'
-```
-
-### Customization
-
-#### Minimum Token Length
-
-Change `> 4` to your preferred minimum:
-
-```awk
-# Show tokens with 2+ characters
-if (length(w) > 1 && !seen[w]++) {
-
-# Show tokens with 8+ characters  
-if (length(w) > 7 && !seen[w]++) {
-```
-
-#### Additional Characters to Strip
-
-Add more characters to the `gsub` pattern:
-
-```awk
-# Also remove angle brackets, semicolons, commas
-gsub(/[\[\]():"<>;,]/, " ")
-```
-
-#### Keep Certain Patterns Intact
-
-To preserve URLs or paths, you could modify the tokenizer:
-
-```awk
-# Don't split on colons for URLs
-gsub(/[\[\]()"]/, " ")
-```
-
-#### Performance
-
-The tokenizer is optimized for speed:
-- Uses `/bin/sh` instead of bash/zsh (faster shell startup)
-- Single `awk` process (no pipes between sed, tr, grep, sort)
-- Deduplication happens in-memory during processing
-- No temporary files
-
-On a typical terminal with ~50-100 lines visible, tokenization completes in **<10ms**.
-
----
----
-## Clipboard History Integration
-
-GhostComplete integrates with [cliphist](https://github.com/sentriz/cliphist) to access your clipboard history directly from the popup.
-
-### How it works
-
-While in the GhostComplete popup:
-
-| Key | Action |
-|-----|--------|
-| `Tab` | Toggle between **tokens** and **clipboard history** |
-| `Ctrl+x` | Open **nvim** to edit the command line |
-| `Enter` | Select and insert |
-| `Escape` | Close popup |
-
-### Modes
-
-**Tokens mode** (default):
-```
-╭─ 👻 GhostComplete ────────────────╮
-│ ❯ search query                    │
-│ ▸ token-from-screen               │
-│ ────────────────────────────────  │
-│ [ Tab: clipboard | C-x: edit ]    │
-╰───────────────────────────────────╯
-```
-
-**Clipboard mode** (after pressing Tab):
-```
-╭─ 👻 GhostComplete ────────────────╮
-│ 📋 search query                   │
-│ ▸ clipboard-entry-1               │
-│ ────────────────────────────────  │
-│ [ Tab: tokens | C-x: edit ]       │
-╰───────────────────────────────────╯
-```
-
-### Requirements
-
-Clipboard history requires [cliphist](https://github.com/sentriz/cliphist):
-
-<details>
-<summary><b>Arch Linux</b></summary>
-
-```bash
-pacman -S cliphist
-```
-</details>
-
-<details>
-<summary><b>From source (Go)</b></summary>
-
-```bash
-go install go.senan.xyz/cliphist@latest
-```
-</details>
-
-### Setting up cliphist
-
-cliphist needs to be running to capture clipboard history. Add this to your Sway/Hyprland config:
-
-**Sway:**
-```bash
-exec wl-paste --type text --watch cliphist store
-exec wl-paste --type image --watch cliphist store
-```
-
-**Hyprland:**
-```bash
-exec-once = wl-paste --type text --watch cliphist store
-exec-once = wl-paste --type image --watch cliphist store
-```
-
----
-
-## Command Line Editor
-
-Press `Ctrl+x` while in the GhostComplete popup to open your current command line in **nvim** for editing.
-
-### How it works
-
-**With content in prompt:**
-1. Press `Ctrl+n` to open GhostComplete
-2. Press `Ctrl+x` to switch to editor mode
-3. nvim opens with your current command line
-4. Edit the command as needed
-5. Save and quit (`:wq`) to apply changes
-
-**With empty prompt (quick fix for failed commands):**
-1. Run a command that fails
-2. With empty prompt, press `Ctrl+n` then `Ctrl+x`
-3. nvim opens with the **last command from history**
-4. Fix the error and save (`:wq`)
-5. The fixed command is ready to run
-
-### Examples
-
-**Editing current command:**
-```
-# You have this complex command:
-$ kubectl get pods -n production | grep -E "api|web" | awk '{print $1}'
-
-# Press Ctrl+n, then Ctrl+x
-# nvim opens with the command
-# Edit it freely with full vim motions
-# :wq to save and return to shell
-```
-
-**Fixing a failed command:**
-```
-# You run a command with a typo:
-$ kubetcl get pods
-zsh: command not found: kubetcl
-
-# Prompt is now empty, press Ctrl+n, then Ctrl+x
-# nvim opens with "kubetcl get pods"
-# Fix the typo: kubectl get pods
-# :wq and the fixed command is ready
-```
-
-### nvim Configuration
-
-The editor opens with a minimal configuration:
-- No swap files
-- No backup files
-- No undo files
-- No status line (clean look)
-
-This keeps the popup fast and avoids cluttering your filesystem.
-
-### Use Cases
-
-- **Fix failed commands** - Quickly edit and re-run commands that errored
-- **Complex pipelines** - Edit long commands with multiple pipes
-- **Fix typos** - Use vim motions to quickly fix errors
-- **Restructure commands** - Rearrange arguments and flags
-- **Multi-cursor editing** - Use vim macros for repetitive edits
-
----
-
 
 ## Troubleshooting
 
@@ -645,42 +368,33 @@ This keeps the popup fast and avoids cluttering your filesystem.
 
 ### No tokens showing
 - There might not be any text longer than 4 characters on screen
-- Try reducing the minimum token length
+- Try reducing the minimum token length in the tokenizer
 
 ### Escape key causes issues
-If pressing Escape causes your shell to enter vi command mode or ring a bell, add this to your `~/.zshrc`:
+Add this to your `~/.zshrc`:
 
 ```zsh
 bindkey '^[' redisplay
 ```
 
-This makes Escape do nothing (just redraws the prompt) while preserving Alt+key combinations.
-
-### Slow popup
-- The script is already optimized, but very large panes might be slower
-- Consider reducing scrollback if you have very large buffers
+---
 
 ## Related Projects
 
 - [fzf](https://github.com/junegunn/fzf) - The fuzzy finder powering this plugin
 - [cliphist](https://github.com/sentriz/cliphist) - Clipboard history manager
 - [tmux](https://github.com/tmux/tmux) - Terminal multiplexer
-- [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) - History-based suggestions
 - [kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) - The colorscheme inspiration
 
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
 
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
 ---
 
 ## Disclaimer
 
-> **Note**: This project was created entirely through conversation with [Claude](https://www.anthropic.com/claude) (Anthropic's AI assistant) using [OpenCode](https://github.com/anomalyco/opencode). The author prompted and directed the development but did not write the code directly. Use at your own risk - the author assumes no responsibility for any issues, damages, or unexpected behavior that may arise from using this software.
+> **Note**: This project was created entirely through conversation with [Claude](https://www.anthropic.com/claude) (Anthropic's AI assistant) using [OpenCode](https://github.com/anomalyco/opencode). The author prompted and directed the development but did not write the code directly.
 
 ---
 
