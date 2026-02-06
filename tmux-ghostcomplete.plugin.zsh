@@ -59,9 +59,16 @@ _gc_complete() {
             > '$tmpfile' 2>/dev/null; true"
     
     # First line is final query, second line is selection
-    # Strip any newlines/carriage returns to prevent accidental execution
-    local final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null | tr -d '\n\r')
-    local selection=$(sed -n '2p' "$tmpfile" 2>/dev/null | tr -d '\n\r')
+    # Strip ALL whitespace/newlines to prevent accidental execution
+    local final_query selection
+    final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null)
+    selection=$(sed -n '2p' "$tmpfile" 2>/dev/null)
+    # Remove trailing newlines, carriage returns, and any trailing whitespace
+    final_query="${final_query%%[$'\n\r']*}"
+    final_query="${final_query%"${final_query##*[![:space:]]}"}"
+    selection="${selection%%[$'\n\r']*}"
+    selection="${selection%"${selection##*[![:space:]]}"}"
+    
     rm -f "$tmpfile" "$queryfile" "$excludefile"
     
     if [[ -n "$selection" ]]; then
