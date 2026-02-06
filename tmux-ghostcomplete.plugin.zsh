@@ -86,12 +86,14 @@ while true; do
         # If editing last failed command, add explanatory comment at top
         if [[ "\$editing_last_cmd" == "1" ]]; then
             # Prepend comment to cmdfile
-            local original_cmd=\$(cat "\$cmdfile")
-            echo "# This command failed (exit code non-zero). Edit and save to retry." > "\$cmdfile"
-            echo "\$original_cmd" >> "\$cmdfile"
+            original_cmd=\$(cat "\$cmdfile")
+            {
+                echo "# This command failed (exit code non-zero). Edit and save to retry."
+                echo "\$original_cmd"
+            } > "\$cmdfile"
         fi
         # Build nvim command - add cursor positioning for failed command editing
-        local nvim_opts=(-u NONE
+        nvim_opts=(-u NONE
             -c "set noswapfile"
             -c "set nobackup"
             -c "set noundofile"
