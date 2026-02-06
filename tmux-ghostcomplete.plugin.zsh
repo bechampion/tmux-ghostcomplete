@@ -13,6 +13,7 @@ _gc_complete() {
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
     local queryfile=$(mktemp)
+    local excludefile=$(mktemp)
     
     # Get suffix after last delimiter for the fzf query
     # If word ends with delimiter, query is empty
@@ -28,10 +29,13 @@ _gc_complete() {
     # Write query to file to avoid escaping issues
     printf '%s' "$query" > "$queryfile"
     
+    # Write current buffer words to exclude file (one per line)
+    printf '%s' "$LBUFFER $RBUFFER" | tr ' ' '\n' | grep -v '^$' > "$excludefile"
+    
     # Centered popup
     # --print-query outputs the final query on first line, selection on second
     tmux display-popup -E -B -w 25% -h 40% -x C -y C \
-        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' | fzf --exact --reverse --no-sort --track --print-query --query=\"\$(cat '$queryfile')\" \
+        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' '$excludefile' | fzf --exact --reverse --no-sort --track --print-query --query=\"\$(cat '$queryfile')\" \
         --border=rounded \
         --border-label='󰊠 GhostComplete' \
         --border-label-pos=0 \
@@ -44,7 +48,7 @@ _gc_complete() {
     # Strip any newlines/carriage returns to prevent accidental execution
     local final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null | tr -d '\n\r')
     local selection=$(sed -n '2p' "$tmpfile" 2>/dev/null | tr -d '\n\r')
-    rm -f "$tmpfile" "$queryfile"
+    rm -f "$tmpfile" "$queryfile" "$excludefile"
     
     if [[ -n "$selection" ]]; then
         # Copy to wayland clipboard

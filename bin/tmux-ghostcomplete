@@ -3,13 +3,23 @@
 # Optimized: single awk does all processing
 
 target_pane="$2"
+exclude_file="$3"
 
 # Capture and process - no tac, fzf --reverse will flip display
 if [ -n "$target_pane" ]; then
     tmux capture-pane -t "$target_pane" -p
 else
     tmux capture-pane -p
-fi | awk '
+fi | awk -v excludefile="$exclude_file" '
+BEGIN {
+    # Load words to exclude from file
+    if (excludefile != "") {
+        while ((getline line < excludefile) > 0) {
+            exclude[line] = 1
+        }
+        close(excludefile)
+    }
+}
 {
     # First pass: extract and mark special patterns to avoid re-processing
     line = $0
@@ -20,7 +30,7 @@ fi | awk '
         url = substr(line, RSTART, RLENGTH)
         # Clean trailing punctuation from URLs
         gsub(/[,;:)\]"]+$/, "", url)
-        if (length(url) > 4 && !seen[url]++) {
+        if (length(url) > 4 && !seen[url]++ && !exclude[url]) {
             print url
         }
         # Remove URL from outline to avoid double processing
@@ -29,15 +39,12 @@ fi | awk '
     }
     
     # Second pass: extract IPv6 addresses (before stripping colons)
-    # IPv6 pattern: groups of hex digits separated by colons, with optional :: for compression
     line = outline
     while (match(line, /[0-9a-fA-F]*:[0-9a-fA-F]*:[0-9a-fA-F:]+/)) {
         ipv6 = substr(line, RSTART, RLENGTH)
-        # Clean trailing punctuation
         gsub(/[,;)\]"]+$/, "", ipv6)
-        # Validate it looks like IPv6 (at least 2 colons, hex chars)
         if (ipv6 ~ /^[0-9a-fA-F:]+$/ && gsub(/:/, ":", ipv6) >= 2) {
-            if (length(ipv6) > 4 && !seen[ipv6]++) {
+            if (length(ipv6) > 4 && !seen[ipv6]++ && !exclude[ipv6]) {
                 print ipv6
             }
         }
@@ -50,7 +57,7 @@ fi | awk '
     n = split(outline, words)
     for (i = 1; i <= n; i++) {
         w = words[i]
-        if (length(w) > 4 && !seen[w]++) {
+        if (length(w) > 4 && !seen[w]++ && !exclude[w]) {
             print w
         }
     }
