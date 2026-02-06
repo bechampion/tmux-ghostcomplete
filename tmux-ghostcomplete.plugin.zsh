@@ -198,7 +198,7 @@ WRAPPER
     
     # Run in tmux popup with dynamic title
     local popup_title=$(cat "$titlefile")
-    tmux display-popup -E -w 35% -h 30% \
+    tmux display-popup -E -w 35% -h 30% -y 70% \
         -b rounded \
         -S 'fg=#54546D' \
         -s 'bg=#1F1F28' \
