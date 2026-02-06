@@ -1,5 +1,5 @@
 # tmux-ghostcomplete.plugin.zsh
-# Screen-aware autocomplete using tmux floating popup + fzf
+# Screen-aware autocomplete using styled tmux popup + fzf
 # Triggered with Ctrl+n
 
 _gc_complete() {
@@ -32,17 +32,31 @@ _gc_complete() {
     # Write current buffer words to exclude file (one per line)
     printf '%s' "$LBUFFER $RBUFFER" | tr ' ' '\n' | grep -v '^$' > "$excludefile"
     
-    # Centered popup
-    # --print-query outputs the final query on first line, selection on second
-    tmux display-popup -E -B -w 25% -h 40% -x C -y C \
-        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' '$excludefile' | fzf --exact --reverse --no-sort --track --print-query --query=\"\$(cat '$queryfile')\" \
-        --border=rounded \
-        --border-label='󰊠 GhostComplete' \
-        --border-label-pos=0 \
-        --pointer='▶' \
-        --prompt='󰓾 ' \
-        --color='hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D,label:#7E9CD8' \
-        --highlight-line > '$tmpfile' 2>/dev/null; true"
+    # Styled tmux popup with fzf
+    # -b rounded = subtle rounded border
+    # -S = border style (dim gray)
+    # -s = popup content style (dark background)
+    # -T = title in border
+    # --reverse = search at top
+    # --bind 'esc:abort' = single Escape to close
+    tmux display-popup -E -w 35% -h 30% \
+        -b rounded \
+        -S 'fg=#54546D' \
+        -s 'bg=#1F1F28' \
+        -T ' 👻 GhostComplete ' \
+        "~/.local/bin/tmux-ghostcomplete \"\$(cat '$queryfile')\" '$pane_id' '$excludefile' | fzf --exact \
+            --reverse \
+            --no-sort \
+            --track \
+            --print-query \
+            --query=\"\$(cat '$queryfile')\" \
+            --bind 'esc:abort' \
+            --no-info \
+            --no-separator \
+            --pointer='▸' \
+            --prompt='❯ ' \
+            --color='bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,fg:#DCD7BA,bg:#1F1F28' \
+            > '$tmpfile' 2>/dev/null; true"
     
     # First line is final query, second line is selection
     # Strip any newlines/carriage returns to prevent accidental execution

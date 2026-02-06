@@ -41,10 +41,11 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Screen-aware** - Extracts all visible text from your tmux pane
 - **Exact matching** - Uses fzf with exact substring matching (no fuzzy)
 - **Smart completion** - Intelligently handles delimiters to avoid duplication
-- **Floating popup** - Clean, centered popup that doesn't disrupt your workflow
+- **Styled floating popup** - Subtle rounded borders with Kanagawa-themed colors
+- **Single Escape to close** - Press Escape once to dismiss the popup
+- **Search at top** - Clean, intuitive layout with search input at the top
 - **Clipboard integration** - Selected text is also copied to your Wayland clipboard
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
-- **Kanagawa themed** - Beautiful colors that match the Kanagawa colorscheme (customizable)
 
 ## Requirements
 
@@ -118,9 +119,36 @@ antigen bundle bechampion/tmux-ghostcomplete
 3. Press `Ctrl+n`
 4. Type to filter the tokens (exact matching)
 5. Press `Enter` to insert the selection
-6. Press `Escape` to cancel
+6. Press `Escape` to cancel (single press!)
 
 The selected text is also copied to your clipboard (Wayland).
+
+---
+
+## Popup Appearance
+
+The popup uses tmux's native styling for a clean, minimal look:
+
+```
+╭─ 👻 GhostComplete ────────────────╮
+│ ❯ search query                    │
+│ ▸ matching-token-1                │
+│   matching-token-2                │
+│   matching-token-3                │
+╰───────────────────────────────────╯
+```
+
+### Features
+
+| Element | Description |
+|---------|-------------|
+| **Rounded border** | Subtle `╭╮╰╯` corners |
+| **Dim border color** | `#54546D` - doesn't distract |
+| **Dark background** | `#1F1F28` - Kanagawa sumiInk1 |
+| **Title in border** | `👻 GhostComplete` |
+| **Search at top** | `--reverse` layout |
+| **Single Escape** | `--bind 'esc:abort'` |
+| **Compact size** | 35% width, 30% height |
 
 ---
 
@@ -136,7 +164,7 @@ The plugin intelligently handles text insertion based on delimiters to avoid dup
 The following characters are recognized as delimiters:
 
 ```
-/ : , @ ( ) [ ] =
+/ : , @ ( ) [ ] = " '
 ```
 
 ### How It Works
@@ -265,10 +293,10 @@ You can modify the delimiter list in `tmux-ghostcomplete.plugin.zsh`:
 
 ```zsh
 # Default delimiters
-local delimiters='/:,@()[]='
+local delimiters='/:,@()[]="'"'"
 
 # Add more delimiters (e.g., #, ?, &, -)
-local delimiters='/:,@()[]=#?&-'
+local delimiters='/:,@()[]="'"'"'#?&-'
 ```
 
 ---
@@ -333,33 +361,47 @@ bindkey '^[c' _gc_complete
 Modify these values in `tmux-ghostcomplete.plugin.zsh`:
 
 ```bash
-# Width: 25%, Height: 40%, Centered
-tmux display-popup -E -B -w 25% -h 40% -x C -y C
+# Default: 35% width, 30% height, centered
+tmux display-popup -E -w 35% -h 30% \
+    -b rounded \
+    -S 'fg=#54546D' \
+    -s 'bg=#1F1F28' \
+    -T ' 👻 GhostComplete '
 ```
 
 Options:
 - `-w` - Width (percentage or columns)
 - `-h` - Height (percentage or rows)
-- `-x` - X position (`C` for center, `R` for right, or number)
-- `-y` - Y position (`C` for center, `S` for bottom, or number)
+- `-b` - Border style: `single`, `rounded`, `double`, `heavy`, `none`
+- `-S` - Border style (fg/bg colors)
+- `-s` - Content style (fg/bg colors)
+- `-T` - Title displayed in border
 
 ### Colors (Kanagawa Theme)
 
-The default colors match the [Kanagawa](https://github.com/rebelot/kanagawa.nvim) colorscheme:
+The popup uses tmux border styling + fzf colors that match [Kanagawa](https://github.com/rebelot/kanagawa.nvim):
 
+**tmux popup:**
 ```bash
---color='hl:#7E9CD8,hl+:#E6C384,fg+:#DCD7BA,bg+:#2A2A37,pointer:#E6C384,prompt:#7E9CD8,border:#3B3B4D'
+-S 'fg=#54546D'      # Border color (sumiInk6 - dim)
+-s 'bg=#1F1F28'      # Background (sumiInk1 - dark)
+```
+
+**fzf colors:**
+```bash
+--color='bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,fg:#DCD7BA,bg:#1F1F28'
 ```
 
 | Element | Color | Description |
 |---------|-------|-------------|
-| `hl` | `#7E9CD8` | Match highlight (crystalBlue) |
-| `hl+` | `#E6C384` | Selected match highlight (carpYellow) |
-| `fg+` | `#DCD7BA` | Selected line text (fujiWhite) |
 | `bg+` | `#2A2A37` | Selected line background (sumiInk4) |
+| `fg+` | `#DCD7BA` | Selected line text (fujiWhite) |
+| `hl` | `#E6C384` | Match highlight (carpYellow) |
+| `hl+` | `#E6C384` | Selected match highlight (carpYellow) |
 | `pointer` | `#E6C384` | Pointer color (carpYellow) |
-| `prompt` | `#7E9CD8` | Prompt color (crystalBlue) |
-| `border` | `#3B3B4D` | Border color (sumiInk5) |
+| `prompt` | `#957FB8` | Prompt color (oniViolet) |
+| `fg` | `#DCD7BA` | Default text (fujiWhite) |
+| `bg` | `#1F1F28` | Background (sumiInk1) |
 
 ---
 
