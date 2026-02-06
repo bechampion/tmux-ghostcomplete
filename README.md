@@ -389,19 +389,20 @@ The popup uses tmux border styling + fzf colors that match [Kanagawa](https://gi
 
 **fzf colors:**
 ```bash
---color='bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,fg:#DCD7BA,bg:#1F1F28'
+--color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28'
 ```
 
 | Element | Color | Description |
 |---------|-------|-------------|
+| `bg` | `#1F1F28` | Background (sumiInk1) |
+| `fg` | `#DCD7BA` | Default text (fujiWhite) |
 | `bg+` | `#2A2A37` | Selected line background (sumiInk4) |
 | `fg+` | `#DCD7BA` | Selected line text (fujiWhite) |
 | `hl` | `#E6C384` | Match highlight (carpYellow) |
 | `hl+` | `#E6C384` | Selected match highlight (carpYellow) |
 | `pointer` | `#E6C384` | Pointer color (carpYellow) |
 | `prompt` | `#957FB8` | Prompt color (oniViolet) |
-| `fg` | `#DCD7BA` | Default text (fujiWhite) |
-| `bg` | `#1F1F28` | Background (sumiInk1) |
+| `gutter` | `#1F1F28` | Gutter background (sumiInk1) |
 
 ---
 
@@ -494,29 +495,6 @@ On a typical terminal with ~50-100 lines visible, tokenization completes in **<1
 
 ---
 
-## Troubleshooting
-
-### Popup doesn't appear
-- Make sure you're inside a tmux session
-- Check tmux version: `tmux -V` (needs 3.2+)
-
-### No tokens showing
-- There might not be any text longer than 4 characters on screen
-- Try reducing the minimum token length
-
-### Escape key causes issues
-If pressing Escape causes your shell to enter vi command mode or ring a bell, add this to your `~/.zshrc`:
-
-```zsh
-bindkey '^[' redisplay
-```
-
-This makes Escape do nothing (just redraws the prompt) while preserving Alt+key combinations.
-
-### Slow popup
-- The script is already optimized, but very large panes might be slower
-- Consider reducing scrollback if you have very large buffers
-
 ## Alternative: Using gum instead of fzf
 
 [gum](https://github.com/charmbracelet/gum) is a tool from Charm.sh that provides beautiful terminal UI components. You can use `gum filter` as an alternative to fzf for a different look and feel.
@@ -569,8 +547,8 @@ _gum_ghostcomplete() {
         --indicator.foreground '#E6C384' \
         --match.foreground '#E6C384' \
         --text.foreground '#DCD7BA' \
-        --cursor-text.foreground '#1F1F28' \
-        --cursor-text.background '#7E9CD8' \
+        --cursor-text.foreground '#DCD7BA' \
+        --cursor-text.background '#2A2A37' \
         --placeholder 'Filter...' \
         --placeholder.foreground '#54546D' \
         --height 10 \
@@ -610,6 +588,43 @@ zle -N _gum_ghostcomplete
 bindkey '^g' _gum_ghostcomplete  # Use Ctrl+g to avoid conflict
 ```
 
+### Installing gum
+
+<details>
+<summary><b>macOS (Homebrew)</b></summary>
+
+```bash
+brew install gum
+```
+</details>
+
+<details>
+<summary><b>Arch Linux</b></summary>
+
+```bash
+pacman -S gum
+```
+</details>
+
+<details>
+<summary><b>Ubuntu/Debian</b></summary>
+
+```bash
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
+sudo apt update && sudo apt install gum
+```
+</details>
+
+<details>
+<summary><b>Go install</b></summary>
+
+```bash
+go install github.com/charmbracelet/gum@latest
+```
+</details>
+
 ### gum effects and styling
 
 gum offers additional UI components you could integrate:
@@ -625,9 +640,35 @@ echo "GhostComplete" | gum style --border rounded --padding "0 1" --foreground "
 # dot, line, minidot, jump, pulse, points, globe, moon, monkey, meter, hamburger
 ```
 
+---
+
+## Troubleshooting
+
+### Popup doesn't appear
+- Make sure you're inside a tmux session
+- Check tmux version: `tmux -V` (needs 3.2+)
+
+### No tokens showing
+- There might not be any text longer than 4 characters on screen
+- Try reducing the minimum token length
+
+### Escape key causes issues
+If pressing Escape causes your shell to enter vi command mode or ring a bell, add this to your `~/.zshrc`:
+
+```zsh
+bindkey '^[' redisplay
+```
+
+This makes Escape do nothing (just redraws the prompt) while preserving Alt+key combinations.
+
+### Slow popup
+- The script is already optimized, but very large panes might be slower
+- Consider reducing scrollback if you have very large buffers
+
 ## Related Projects
 
 - [fzf](https://github.com/junegunn/fzf) - The fuzzy finder powering this plugin
+- [gum](https://github.com/charmbracelet/gum) - Alternative UI toolkit (see gum version above)
 - [tmux](https://github.com/tmux/tmux) - Terminal multiplexer
 - [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) - History-based suggestions
 - [kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) - The colorscheme inspiration

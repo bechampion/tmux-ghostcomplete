@@ -55,7 +55,7 @@ _gc_complete() {
             --no-separator \
             --pointer='▸' \
             --prompt='❯ ' \
-            --color='bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,fg:#DCD7BA,bg:#1F1F28' \
+            --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28' \
             > '$tmpfile' 2>/dev/null; true"
     
     # First line is final query, second line is selection
