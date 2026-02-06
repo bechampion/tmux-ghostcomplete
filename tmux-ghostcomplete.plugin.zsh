@@ -2,6 +2,7 @@
 # Screen-aware autocomplete using styled tmux popup + fzf
 # Triggered with Ctrl+n
 # Tab switches to clipboard history (requires cliphist)
+# Ctrl+x opens nvim to edit command
 
 _gc_complete() {
     # Ensure we're in tmux
@@ -16,6 +17,7 @@ _gc_complete() {
     local queryfile=$(mktemp)
     local excludefile=$(mktemp)
     local modefile=$(mktemp)
+    local cmdfile=$(mktemp)
     
     # Get suffix after last delimiter for the query
     local query="$word"
@@ -31,6 +33,9 @@ _gc_complete() {
     # Write current buffer words to exclude file (one per line)
     printf '%s' "$LBUFFER $RBUFFER" | tr ' ' '\n' | grep -v '^$' > "$excludefile"
     
+    # Write current command line to file for potential editing
+    printf '%s' "${LBUFFER}${RBUFFER}" > "$cmdfile"
+    
     # Track which mode was used
     echo "tokens" > "$modefile"
     
@@ -43,36 +48,52 @@ tmpfile="$tmpfile"
 queryfile="$queryfile"
 pane_id="$pane_id"
 excludefile="$excludefile"
+cmdfile="$cmdfile"
 
 while true; do
     mode=\$(cat "\$modefile")
     
-    if [[ "\$mode" == "clipboard" ]]; then
-        # Clipboard mode - strip the ID numbers for display, but keep full line for decode
+    if [[ "\$mode" == "editor" ]]; then
+        # Editor mode - open nvim to edit command
+        nvim -u NONE \\
+            -c "set noswapfile" \\
+            -c "set nobackup" \\
+            -c "set noundofile" \\
+            -c "set laststatus=0" \\
+            -c "set noruler" \\
+            -c "set noshowcmd" \\
+            -c "set shortmess+=F" \\
+            "\$cmdfile"
+        break
+    elif [[ "\$mode" == "clipboard" ]]; then
+        # Clipboard mode
         result=\$(cliphist list | fzf --exact \\
             --reverse \\
             --no-sort \\
             --print-query \\
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
+            --bind 'ctrl-x:become:echo EDITOR_PRESSED' \\
             --bind 'esc:abort' \\
             --no-info \\
             --no-separator \\
             --pointer='▸' \\
-            --prompt=' ' \\
+            --prompt='📋 ' \\
             --with-nth=2.. \\
             --delimiter='\t' \\
             --border=bottom \\
-            --border-label='[ Tab: tokens ]' \\
+            --border-label='[ Tab: tokens | C-x: edit ]' \\
             --border-label-pos=0:bottom \\
             --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D')
         
         if [[ "\$result" == "TAB_PRESSED" ]]; then
             echo "tokens" > "\$modefile"
             continue
+        elif [[ "\$result" == "EDITOR_PRESSED" ]]; then
+            echo "editor" > "\$modefile"
+            continue
         elif [[ -n "\$result" ]]; then
             echo "clipboard" > "\$modefile"
-            # First line is query, second is selection (with ID) - decode the selection
             clip_selection=\$(echo "\$result" | sed -n '2p')
             if [[ -n "\$clip_selection" ]]; then
                 echo "\$result" | head -1 > "\$tmpfile.query"
@@ -93,18 +114,22 @@ while true; do
             --print-query \\
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
+            --bind 'ctrl-x:become:echo EDITOR_PRESSED' \\
             --bind 'esc:abort' \\
             --no-info \\
             --no-separator \\
             --pointer='▸' \\
             --prompt='❯ ' \\
             --border=bottom \\
-            --border-label='[ Tab: clipboard ]' \\
+            --border-label='[ Tab: clipboard | C-x: edit ]' \\
             --border-label-pos=0:bottom \\
             --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D')
         
         if [[ "\$result" == "TAB_PRESSED" ]]; then
             echo "clipboard" > "\$modefile"
+            continue
+        elif [[ "\$result" == "EDITOR_PRESSED" ]]; then
+            echo "editor" > "\$modefile"
             continue
         elif [[ -n "\$result" ]]; then
             echo "\$result" > "\$tmpfile"
@@ -129,7 +154,16 @@ WRAPPER
     local mode=$(cat "$modefile" 2>/dev/null)
     local final_query selection
     
-    if [[ "$mode" == "clipboard" ]]; then
+    if [[ "$mode" == "editor" ]]; then
+        # Editor mode - replace entire command line with edited content
+        local edited=$(cat "$cmdfile" 2>/dev/null)
+        edited="${edited%%[$'\n\r']*}"
+        LBUFFER="$edited"
+        RBUFFER=""
+        rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile"
+        zle redisplay
+        return 0
+    elif [[ "$mode" == "clipboard" ]]; then
         # Clipboard: first line is decoded content, second line is final query
         selection=$(sed -n '1p' "$tmpfile" 2>/dev/null)
         final_query=$(sed -n '2p' "$tmpfile" 2>/dev/null)
@@ -145,7 +179,7 @@ WRAPPER
     selection="${selection%%[$'\n\r']*}"
     selection="${selection%"${selection##*[![:space:]]}"}"
     
-    rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper"
+    rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile"
     
     if [[ -n "$selection" ]]; then
         # Copy to clipboard
@@ -153,26 +187,20 @@ WRAPPER
         
         # Smart insertion logic (same for both modes)
         if [[ -n "$word" && "$selection" == *"$word"* ]]; then
-            # Selection contains what we typed - replace whole word
             LBUFFER="${LBUFFER%$word}$selection"
         elif [[ "$final_query" != "$query" ]]; then
-            # Query was changed in popup
             if [[ -n "$query" ]]; then
                 LBUFFER="${LBUFFER%$query}$selection"
             else
                 LBUFFER="${LBUFFER}${selection}"
             fi
         elif [[ -z "$query" ]]; then
-            # No query, just append
             LBUFFER="${LBUFFER}${selection}"
         elif [[ "$selection" == "$query"* ]]; then
-            # Selection starts with query - strip prefix
             LBUFFER="${LBUFFER}${selection#$query}"
         elif [[ "$selection" == *"$query"* ]]; then
-            # Query in middle of selection - replace query
             LBUFFER="${LBUFFER%$query}$selection"
         else
-            # No match, just append
             LBUFFER="${LBUFFER}${selection}"
         fi
     fi
