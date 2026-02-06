@@ -18,6 +18,7 @@ _gc_complete() {
     local excludefile=$(mktemp)
     local modefile=$(mktemp)
     local cmdfile=$(mktemp)
+    local titlefile=$(mktemp)
     
     # Get suffix after last delimiter for the query
     local query="$word"
@@ -35,16 +36,24 @@ _gc_complete() {
     
     # Determine command to edit:
     # - If prompt has content, use that
-    # - If prompt is empty and last command failed, use last command from history
+    # - If prompt is empty, use last command from history
     local current_cmd="${LBUFFER}${RBUFFER}"
-    local last_exit_code=$?
+    local editing_last_cmd=0
     
     if [[ -z "$current_cmd" ]]; then
         # Prompt is empty - get the last command from history
         local last_cmd=$(fc -ln -1 2>/dev/null | sed 's/^[[:space:]]*//')
         printf '%s' "$last_cmd" > "$cmdfile"
+        editing_last_cmd=1
     else
         printf '%s' "$current_cmd" > "$cmdfile"
+    fi
+    
+    # Set title based on whether we're editing last command
+    if [[ $editing_last_cmd -eq 1 ]]; then
+        echo " 👻 GhostComplete ~ Edit last cmd " > "$titlefile"
+    else
+        echo " 👻 GhostComplete " > "$titlefile"
     fi
     
     # Track which mode was used
@@ -60,6 +69,7 @@ queryfile="$queryfile"
 pane_id="$pane_id"
 excludefile="$excludefile"
 cmdfile="$cmdfile"
+editing_last_cmd="$editing_last_cmd"
 
 while true; do
     mode=\$(cat "\$modefile")
@@ -117,7 +127,13 @@ while true; do
             break
         fi
     else
-        # Tokens mode
+        # Tokens mode - show different label if editing last command
+        if [[ "\$editing_last_cmd" == "1" ]]; then
+            label='[ Tab: clipboard | C-x: edit last cmd ]'
+        else
+            label='[ Tab: clipboard | C-x: edit ]'
+        fi
+        
         result=\$(~/.local/bin/tmux-ghostcomplete "\$(cat "\$queryfile")" "\$pane_id" "\$excludefile" | fzf --exact \\
             --reverse \\
             --no-sort \\
@@ -132,7 +148,7 @@ while true; do
             --pointer='▸' \\
             --prompt='❯ ' \\
             --border=bottom \\
-            --border-label='[ Tab: clipboard | C-x: edit ]' \\
+            --border-label="\$label" \\
             --border-label-pos=0:bottom \\
             --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D')
         
@@ -153,12 +169,13 @@ done
 WRAPPER
     chmod +x "$wrapper"
     
-    # Run in tmux popup
+    # Run in tmux popup with dynamic title
+    local popup_title=$(cat "$titlefile")
     tmux display-popup -E -w 35% -h 30% \
         -b rounded \
         -S 'fg=#54546D' \
         -s 'bg=#1F1F28' \
-        -T ' 👻 GhostComplete ' \
+        -T "$popup_title" \
         "$wrapper"
     
     # Read results
@@ -171,7 +188,7 @@ WRAPPER
         edited="${edited%%[$'\n\r']*}"
         LBUFFER="$edited"
         RBUFFER=""
-        rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile"
+        rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
         zle redisplay
         return 0
     elif [[ "$mode" == "clipboard" ]]; then
@@ -190,7 +207,7 @@ WRAPPER
     selection="${selection%%[$'\n\r']*}"
     selection="${selection%"${selection##*[![:space:]]}"}"
     
-    rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile"
+    rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
     
     if [[ -n "$selection" ]]; then
         # Copy to clipboard
