@@ -90,17 +90,22 @@ while true; do
             echo "# This command failed (exit code non-zero). Edit and save to retry." > "\$cmdfile"
             echo "\$original_cmd" >> "\$cmdfile"
         fi
-        nvim -u NONE \\
-            -c "set noswapfile" \\
-            -c "set nobackup" \\
-            -c "set noundofile" \\
-            -c "set laststatus=0" \\
-            -c "set noruler" \\
-            -c "set noshowcmd" \\
-            -c "set shortmess+=F" \\
-            -c "set filetype=sh" \\
-            -c "syntax on" \\
-            "\$cmdfile"
+        # Build nvim command - add cursor positioning for failed command editing
+        local nvim_opts=(-u NONE
+            -c "set noswapfile"
+            -c "set nobackup"
+            -c "set noundofile"
+            -c "set laststatus=0"
+            -c "set noruler"
+            -c "set noshowcmd"
+            -c "set shortmess+=F"
+            -c "set filetype=sh"
+            -c "syntax on"
+        )
+        if [[ "\$editing_last_cmd" == "1" ]]; then
+            nvim_opts+=(-c "2")  # Move cursor to line 2 (the command)
+        fi
+        nvim "\${nvim_opts[@]}" "\$cmdfile"
         # Remove comment line if still present
         if [[ "\$editing_last_cmd" == "1" ]]; then
             sed -i '1{/^# This command failed/d}' "\$cmdfile"
