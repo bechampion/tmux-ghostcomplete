@@ -28,6 +28,35 @@ This project was created from scratch through conversation with [Claude](https:/
 
 ---
 
+## Screenshots
+
+### Token Completion
+Complete pod names, paths, and identifiers from kubectl output:
+
+![Token completion](assets/token-completion.png)
+
+### IP Address Completion
+Quickly grab IP addresses from dig output:
+
+![IP completion](assets/ip-completion.png)
+
+### Edit Failed Commands
+When a command fails, press `Ctrl+n` then `Ctrl+x` to edit it in nvim:
+
+![Edit failed command](assets/edit-failed-cmd.png)
+
+### Nvim Editor
+Edit commands with full vim motions - comment shows why you're editing:
+
+![Nvim editor](assets/nvim-editor.png)
+
+### Clipboard History
+Press `Tab` to switch to clipboard history mode:
+
+![Clipboard mode](assets/clipboard-mode.png)
+
+---
+
 ## What is this?
 
 Ever had a long path, URL, or identifier on screen and wished you could just autocomplete it without copy-pasting? **tmux-ghostcomplete** does exactly that.
