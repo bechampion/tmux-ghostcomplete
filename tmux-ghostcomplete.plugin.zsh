@@ -52,6 +52,8 @@ while true; do
         result=\$(cliphist list | fzf --exact \\
             --reverse \\
             --no-sort \\
+            --print-query \\
+            --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind 'esc:abort' \\
             --no-info \\
@@ -68,7 +70,14 @@ while true; do
             continue
         elif [[ -n "\$result" ]]; then
             echo "clipboard" > "\$modefile"
-            cliphist decode <<< "\$result" > "\$tmpfile"
+            # First line is query, second is selection - decode the selection
+            clip_selection=\$(echo "\$result" | sed -n '2p')
+            if [[ -n "\$clip_selection" ]]; then
+                echo "\$result" | head -1 > "\$tmpfile.query"
+                cliphist decode <<< "\$clip_selection" > "\$tmpfile"
+                cat "\$tmpfile.query" >> "\$tmpfile"
+                rm -f "\$tmpfile.query"
+            fi
             break
         else
             break
@@ -119,18 +128,20 @@ WRAPPER
     local final_query selection
     
     if [[ "$mode" == "clipboard" ]]; then
-        selection=$(cat "$tmpfile" 2>/dev/null)
-        selection="${selection%%[$'\n\r']*}"
-        selection="${selection%"${selection##*[![:space:]]}"}"
-        final_query=""
+        # Clipboard: first line is decoded content, second line is final query
+        selection=$(sed -n '1p' "$tmpfile" 2>/dev/null)
+        final_query=$(sed -n '2p' "$tmpfile" 2>/dev/null)
     else
+        # Tokens: first line is final query, second is selection
         final_query=$(sed -n '1p' "$tmpfile" 2>/dev/null)
         selection=$(sed -n '2p' "$tmpfile" 2>/dev/null)
-        final_query="${final_query%%[$'\n\r']*}"
-        final_query="${final_query%"${final_query##*[![:space:]]}"}"
-        selection="${selection%%[$'\n\r']*}"
-        selection="${selection%"${selection##*[![:space:]]}"}"
     fi
+    
+    # Clean up whitespace
+    final_query="${final_query%%[$'\n\r']*}"
+    final_query="${final_query%"${final_query##*[![:space:]]}"}"
+    selection="${selection%%[$'\n\r']*}"
+    selection="${selection%"${selection##*[![:space:]]}"}"
     
     rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper"
     
@@ -138,24 +149,28 @@ WRAPPER
         # Copy to clipboard
         printf '%s' "$selection" | wl-copy 2>/dev/null
         
-        # Insert logic
-        if [[ "$mode" == "clipboard" ]]; then
-            LBUFFER="${LBUFFER}${selection}"
-        elif [[ -n "$word" && "$selection" == *"$word"* ]]; then
+        # Smart insertion logic (same for both modes)
+        if [[ -n "$word" && "$selection" == *"$word"* ]]; then
+            # Selection contains what we typed - replace whole word
             LBUFFER="${LBUFFER%$word}$selection"
         elif [[ "$final_query" != "$query" ]]; then
+            # Query was changed in popup
             if [[ -n "$query" ]]; then
                 LBUFFER="${LBUFFER%$query}$selection"
             else
                 LBUFFER="${LBUFFER}${selection}"
             fi
         elif [[ -z "$query" ]]; then
+            # No query, just append
             LBUFFER="${LBUFFER}${selection}"
         elif [[ "$selection" == "$query"* ]]; then
+            # Selection starts with query - strip prefix
             LBUFFER="${LBUFFER}${selection#$query}"
         elif [[ "$selection" == *"$query"* ]]; then
+            # Query in middle of selection - replace query
             LBUFFER="${LBUFFER%$query}$selection"
         else
+            # No match, just append
             LBUFFER="${LBUFFER}${selection}"
         fi
     fi
