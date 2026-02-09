@@ -77,6 +77,9 @@ pane_id="$pane_id"
 excludefile="$excludefile"
 cmdfile="$cmdfile"
 editing_last_cmd="$editing_last_cmd"
+lbuffer="$LBUFFER"
+word="$word"
+query="$query"
 
 while true; do
     mode=\$(cat "\$modefile")
@@ -142,7 +145,16 @@ while true; do
             # Capture the selected clipboard item (line 3) and decode it for editing
             clip_entry=\$(echo "\$result" | sed -n '3p')
             if [[ -n "\$clip_entry" ]]; then
-                cliphist decode <<< "\$clip_entry" > "\$cmdfile"
+                selected=\$(cliphist decode <<< "\$clip_entry")
+                # Build the full command: replace the word/query with selection
+                if [[ -n "\$word" && "\$selected" == *"\$word"* ]]; then
+                    full_cmd="\${lbuffer%\$word}\$selected"
+                elif [[ -n "\$query" ]]; then
+                    full_cmd="\${lbuffer%\$query}\$selected"
+                else
+                    full_cmd="\${lbuffer}\$selected"
+                fi
+                echo "\$full_cmd" > "\$cmdfile"
                 editing_last_cmd=0
             fi
             echo "editor" > "\$modefile"
@@ -191,10 +203,21 @@ while true; do
             echo "clipboard" > "\$modefile"
             continue
         elif [[ "\$first_line" == "EDITOR_PRESSED" ]]; then
-            # Capture the selected item (line 3) and put it in cmdfile for editing
+            # Capture the selected item (line 3) and build full command with it
             selected=\$(echo "\$result" | sed -n '3p')
             if [[ -n "\$selected" ]]; then
-                echo "\$selected" > "\$cmdfile"
+                # Build the full command: replace the word/query with selection
+                if [[ -n "\$word" && "\$selected" == *"\$word"* ]]; then
+                    # Selection contains the word, replace word with selection
+                    full_cmd="\${lbuffer%\$word}\$selected"
+                elif [[ -n "\$query" ]]; then
+                    # Replace query portion with selection
+                    full_cmd="\${lbuffer%\$query}\$selected"
+                else
+                    # Just append selection
+                    full_cmd="\${lbuffer}\$selected"
+                fi
+                echo "\$full_cmd" > "\$cmdfile"
                 editing_last_cmd=0  # Not editing a failed command, editing a selection
             fi
             echo "editor" > "\$modefile"
