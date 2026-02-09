@@ -121,7 +121,7 @@ while true; do
             --print-query \\
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
-            --bind 'ctrl-x:become:echo EDITOR_PRESSED' \\
+            --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
             --no-separator \\
@@ -134,10 +134,17 @@ while true; do
             --border-label-pos=0:bottom \\
             --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D')
         
-        if [[ "\$result" == "TAB_PRESSED" ]]; then
+        first_line=\$(echo "\$result" | head -1)
+        if [[ "\$first_line" == "TAB_PRESSED" ]]; then
             echo "tokens" > "\$modefile"
             continue
-        elif [[ "\$result" == "EDITOR_PRESSED" ]]; then
+        elif [[ "\$first_line" == "EDITOR_PRESSED" ]]; then
+            # Capture the selected clipboard item (line 3) and decode it for editing
+            clip_entry=\$(echo "\$result" | sed -n '3p')
+            if [[ -n "\$clip_entry" ]]; then
+                cliphist decode <<< "\$clip_entry" > "\$cmdfile"
+                editing_last_cmd=0
+            fi
             echo "editor" > "\$modefile"
             continue
         elif [[ -n "\$result" ]]; then
@@ -168,7 +175,7 @@ while true; do
             --print-query \\
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
-            --bind 'ctrl-x:become:echo EDITOR_PRESSED' \\
+            --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
             --no-separator \\
@@ -179,10 +186,17 @@ while true; do
             --border-label-pos=0:bottom \\
             --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D')
         
-        if [[ "\$result" == "TAB_PRESSED" ]]; then
+        first_line=\$(echo "\$result" | head -1)
+        if [[ "\$first_line" == "TAB_PRESSED" ]]; then
             echo "clipboard" > "\$modefile"
             continue
-        elif [[ "\$result" == "EDITOR_PRESSED" ]]; then
+        elif [[ "\$first_line" == "EDITOR_PRESSED" ]]; then
+            # Capture the selected item (line 3) and put it in cmdfile for editing
+            selected=\$(echo "\$result" | sed -n '3p')
+            if [[ -n "\$selected" ]]; then
+                echo "\$selected" > "\$cmdfile"
+                editing_last_cmd=0  # Not editing a failed command, editing a selection
+            fi
             echo "editor" > "\$modefile"
             continue
         elif [[ -n "\$result" ]]; then
