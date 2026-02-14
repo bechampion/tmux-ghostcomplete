@@ -81,6 +81,41 @@ lbuffer="$LBUFFER"
 word="$word"
 query="$query"
 
+# Helper script for highlighting - only highlights within visible pane area
+highlighter=\$(mktemp)
+cat > "\$highlighter" << HLSCRIPT
+#!/bin/bash
+pane="\\\$1"
+term="\\\$2"
+[[ -z "\\\$term" ]] && exit 0
+
+# Only search within VISIBLE pane content (no scrollback)
+visible_content=\\\$(tmux capture-pane -t "\\\$pane" -p)
+echo "\\\$visible_content" | grep -qF "\\\$term" || exit 0  # Term not visible, do nothing
+
+# Set Kanagawa-themed highlight colors before entering copy-mode
+# oniViolet (#957FB8) for current match, gray for others
+tmux set-option -p -t "\\\$pane" copy-mode-current-match-style "fg=#1F1F28,bg=#957FB8,bold"
+tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#DCD7BA,bg=#54546D"
+
+# Enter copy-mode
+tmux copy-mode -t "\\\$pane" 2>/dev/null
+
+# Go to bottom of visible area and search backward
+# This makes the bottom-most match the "current" one (purple highlight)
+tmux send-keys -t "\\\$pane" -X bottom-line
+tmux send-keys -t "\\\$pane" -X end-of-line
+tmux send-keys -t "\\\$pane" -X search-backward "\\\$term" 2>/dev/null
+HLSCRIPT
+chmod +x "\$highlighter"
+
+# Cleanup helper
+cleanup_search() {
+    tmux send-keys -t "\$pane_id" -X cancel 2>/dev/null || true
+    rm -f "\$highlighter" 2>/dev/null
+}
+trap cleanup_search EXIT
+
 while true; do
     mode=\$(cat "\$modefile")
     
@@ -129,7 +164,7 @@ while true; do
             --no-info \\
             --no-separator \\
             --pointer='▸' \\
-            --prompt=' ' \\
+            --prompt=' ' \\
             --with-nth=2.. \\
             --delimiter='\t' \\
             --border=bottom \\
@@ -180,13 +215,14 @@ while true; do
             label='[ Tab: clipboard | C-x: edit ]'
         fi
         
-        result=\$(~/.local/bin/tmux-ghostcomplete "\$(cat "\$queryfile")" "\$pane_id" "\$excludefile" | fzf --exact \\
+        result=\$(~/.local/bin/tmux-ghostcomplete "\$(cat "\$queryfile")" "\$pane_id" "\$excludefile" | tac | fzf --exact \\
             --reverse \\
             --no-sort \\
             --track \\
             --print-query \\
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
+            --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\

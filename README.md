@@ -74,6 +74,38 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Command line editor** - Press Ctrl+x to edit your command in nvim
 - **Edit failed commands** - Automatically loads last failed command for quick fixes
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
+- **Live highlighting** - Matches are highlighted in your terminal as you scroll
+
+
+## Live Match Highlighting
+
+As you scroll through completions, matching text is **highlighted in your terminal pane** so you can see exactly where each token came from.
+
+### How It Works
+
+- **Purple highlight** (oniViolet `#957FB8`) - Current match (bottom-most occurrence)
+- **Gray highlight** (sumiInk4 `#54546D`) - Other matches on screen
+
+The highlighting:
+- Only shows matches **within the visible area** (no scrollback)
+- Prioritizes the **bottom-most match** (most recent)
+- Automatically cleans up when you select or cancel
+
+### Visual Example
+
+```
+┌─────────────────────────────────┐
+│ $ kubectl get pods              │
+│ NAME            READY   STATUS  │
+│ api-server      1/1     Running │  ← gray highlight
+│ api-worker      1/1     Running │  ← purple highlight (current)
+│                                 │
+│ ╭─ 👻 GhostComplete ──────────╮ │
+│ │ ▸ api-worker                │ │  ← focused item
+│ │   api-server                │ │
+│ ╰─────────────────────────────╯ │
+└─────────────────────────────────┘
+```
 
 ## Requirements
 
