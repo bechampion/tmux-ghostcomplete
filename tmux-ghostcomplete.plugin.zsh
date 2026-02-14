@@ -96,7 +96,7 @@ echo "\\\$visible_content" | grep -qF "\\\$term" || exit 0  # Term not visible, 
 # Set Kanagawa-themed highlight colors before entering copy-mode
 # Bright green for current match (underlined), dim yellow for others
 tmux set-option -p -t "\\\$pane" copy-mode-current-match-style "fg=#00FF00,bg=#000000,underscore"
-tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#E6C384,bg=#16161D"
+tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#C0A36E,bg=default"
 
 # Enter copy-mode
 tmux copy-mode -t "\\\$pane" 2>/dev/null
