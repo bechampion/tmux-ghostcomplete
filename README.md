@@ -83,8 +83,8 @@ As you scroll through completions, matching text is **highlighted in your termin
 
 ### How It Works
 
-- **Purple highlight** (oniViolet `#957FB8`) - Current match (bottom-most occurrence)
-- **Gray highlight** (sumiInk4 `#54546D`) - Other matches on screen
+- **Green highlight** (bright green `#00FF00`, underlined) - Current match (bottom-most occurrence)
+- **Yellow highlight** (carpYellow `#E6C384` on sumiInk0) - Other matches on screen
 
 The highlighting:
 - Only shows matches **within the visible area** (no scrollback)
