@@ -89,9 +89,14 @@ pane="\\\$1"
 term="\\\$2"
 [[ -z "\\\$term" ]] && exit 0
 
+
+# Always cancel existing highlighting first
+tmux send-keys -t "\\\$pane" -X cancel 2>/dev/null
 # Only search within VISIBLE pane content (no scrollback)
 visible_content=\\\$(tmux capture-pane -t "\\\$pane" -p)
-echo "\\\$visible_content" | grep -qF "\\\$term" || exit 0  # Term not visible, do nothing
+if ! echo "\\\$visible_content" | grep -qF "\\\$term"; then
+    exit 0
+fi
 
 # Set Kanagawa-themed highlight colors before entering copy-mode
 # Bright green for current match (underlined), dim yellow for others
@@ -223,6 +228,7 @@ while true; do
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
+            --bind "change:execute-silent(tmux send-keys -t \$pane_id -X cancel 2>/dev/null || true)" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
