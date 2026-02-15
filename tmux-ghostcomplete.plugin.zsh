@@ -229,7 +229,6 @@ while true; do
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
             --bind "result:transform:[ \$(echo {} | wc -c) -gt 1 ] && echo execute-silent:\$highlighter\ \$pane_id\ {} || echo execute-silent:tmux\ send-keys\ -t\ \$pane_id\ -X\ cancel" \\
             --bind "ctrl-f:reload(echo)+change-prompt(🔍 )+clear-query+change-border-label([ Esc: back ])" \\
-            --bind "change:execute-silent([ -z {} ] && tmux copy-mode -t \$pane_id 2>/dev/null; [ -z {} ] && [ -n {q} ] && tmux send-keys -t \$pane_id -X search-backward {q} 2>/dev/null)" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
