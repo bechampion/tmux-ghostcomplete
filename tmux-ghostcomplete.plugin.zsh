@@ -100,7 +100,7 @@ fi
 # Set Kanagawa-themed highlight colors before entering copy-mode
 # Bright green for current match (underlined), dim yellow for others
 tmux set-option -p -t "\\\$pane" copy-mode-current-match-style "fg=#00FF00,bg=#000000,underscore"
-tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#E6C384,bg=#54546D"
+tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#E6C384,bg=#2d2d2d"
 
 # Enter copy-mode
 tmux copy-mode -t "\\\$pane" 2>/dev/null
