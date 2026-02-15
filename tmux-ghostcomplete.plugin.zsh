@@ -87,7 +87,7 @@ cat > "\$highlighter" << HLSCRIPT
 #!/bin/bash
 pane="\\\$1"
 term="\\\$2"
-[[ -z "\\\$term" ]] && exit 0
+[[ -z "\\\$term" ]] && { tmux send-keys -t "\\\$pane" -X cancel 2>/dev/null; exit 0; }
 
 
 # Always cancel existing highlighting first
@@ -228,7 +228,7 @@ while true; do
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
-            --bind "change:execute-silent(tmux send-keys -t \$pane_id -X cancel 2>/dev/null || true)" \\
+            --bind "result:transform:[ \$(echo {} | wc -c) -gt 1 ] && echo execute-silent:\$highlighter\ \$pane_id\ {} || echo execute-silent:tmux\ send-keys\ -t\ \$pane_id\ -X\ cancel" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
