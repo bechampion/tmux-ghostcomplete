@@ -10,13 +10,13 @@ full_history="$4"
 # Capture pane content - use -S - for full history
 if [ -n "$target_pane" ]; then
     if [ "$full_history" = "full" ]; then
-        tmux capture-pane -t "$target_pane" -p -S -
+        tmux capture-pane -t "$target_pane" -p -S - -E -
     else
         tmux capture-pane -t "$target_pane" -p
     fi
 else
     if [ "$full_history" = "full" ]; then
-        tmux capture-pane -p -S -
+        tmux capture-pane -p -S - -E -
     else
         tmux capture-pane -p
     fi
@@ -40,7 +40,7 @@ BEGIN {
         url = substr(line, RSTART, RLENGTH)
         # Clean trailing punctuation from URLs
         gsub(/[,;:)\]"]+$/, "", url)
-        if (length(url) > 4 && !seen[url]++ && !exclude[url]) {
+        if (length(url) >= 3 && !seen[url]++ && !exclude[url]) {
             print url
         }
         # Remove URL from outline to avoid double processing
@@ -54,7 +54,7 @@ BEGIN {
         ipv6 = substr(line, RSTART, RLENGTH)
         gsub(/[,;)\]"]+$/, "", ipv6)
         if (ipv6 ~ /^[0-9a-fA-F:]+$/ && gsub(/:/, ":", ipv6) >= 2) {
-            if (length(ipv6) > 4 && !seen[ipv6]++ && !exclude[ipv6]) {
+            if (length(ipv6) >= 3 && !seen[ipv6]++ && !exclude[ipv6]) {
                 print ipv6
             }
         }
@@ -67,7 +67,7 @@ BEGIN {
     n = split(outline, words)
     for (i = 1; i <= n; i++) {
         w = words[i]
-        if (length(w) > 4 && !seen[w]++ && !exclude[w]) {
+        if (length(w) >= 3 && !seen[w]++ && !exclude[w]) {
             print w
         }
     }

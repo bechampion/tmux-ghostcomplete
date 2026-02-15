@@ -1,8 +1,9 @@
 # tmux-ghostcomplete.plugin.zsh
 # Screen-aware autocomplete using styled tmux popup + fzf
-# Triggered with Ctrl+n
+# Ctrl+n: Token completion from visible pane
+# Ctrl+f: Simple history search (type text, Enter searches in tmux)
 # Tab switches to clipboard history (requires cliphist)
-# Ctrl+x opens nvim to edit command (loads last failed command if prompt is empty AND last command failed)
+# Ctrl+x opens nvim to edit command
 
 # Store last exit code before it gets overwritten
 __gc_last_exit_code=0
@@ -11,6 +12,56 @@ __gc_precmd() {
 }
 precmd_functions+=(__gc_precmd)
 
+# History search function - Ctrl+f
+# Simple text input, Enter searches in tmux copy-mode
+_gc_history_search() {
+    [[ -z "$TMUX" ]] && return 0
+    
+    local pane_id=$(tmux display-message -p '#{pane_id}')
+    local tmpfile=$(mktemp)
+    
+    # Simple wrapper - just read input
+    local wrapper=$(mktemp)
+    cat > "$wrapper" << WRAPPER
+#!/bin/bash
+read -p "🔍 " search_term
+echo "\$search_term" > "$tmpfile"
+WRAPPER
+    chmod +x "$wrapper"
+    
+    tmux display-popup -E -w 40% -h 3 \
+        -b rounded \
+        -S 'fg=#54546D' \
+        -s 'bg=#1F1F28' \
+        -T " 📜 History Search " \
+        "$wrapper"
+    
+    local search_term=$(cat "$tmpfile" 2>/dev/null)
+    rm -f "$tmpfile" "$wrapper"
+    
+    # Clean up whitespace
+    search_term="${search_term%%[$'\n\r']*}"
+    search_term="${search_term%"${search_term##*[![:space:]]}"}"
+    
+    if [[ -n "$search_term" ]]; then
+        # Check if term exists in pane history before searching
+        if tmux capture-pane -t "$pane_id" -p -S - | grep -qF "$search_term"; then
+            # Set Kanagawa-themed highlight colors
+            tmux set-option -p -t "$pane_id" copy-mode-current-match-style "fg=#00FF00,bg=#000000,underscore"
+            tmux set-option -p -t "$pane_id" copy-mode-match-style "fg=#E6C384,bg=#2d2d2d"
+            tmux copy-mode -t "$pane_id"
+            tmux send-keys -t "$pane_id" -X search-backward "$search_term"
+        fi
+    fi
+    
+    zle redisplay
+    return 0
+}
+
+zle -N _gc_history_search
+bindkey '^f' _gc_history_search
+
+# Token completion function - Ctrl+n
 _gc_complete() {
     # Ensure we're in tmux
     [[ -z "$TMUX" ]] && return 0
@@ -212,12 +263,8 @@ while true; do
             break
         fi
     else
-        # Tokens mode - show different label if editing last failed command
-        if [[ "\$editing_last_cmd" == "1" ]]; then
-            label='[ Tab: clipboard | C-x: edit | C-f: history ]'
-        else
-            label='[ Tab: clipboard | C-x: edit | C-f: history ]'
-        fi
+        # Tokens mode
+        label='[ Tab: clipboard | C-x: edit ]'
         
         result=\$(~/.local/bin/tmux-ghostcomplete "\$(cat "\$queryfile")" "\$pane_id" "\$excludefile" | tac | fzf --exact \\
             --reverse \\
@@ -228,7 +275,6 @@ while true; do
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
             --bind "result:transform:[ \$(echo {} | wc -c) -gt 1 ] && echo execute-silent:\$highlighter\ \$pane_id\ {} || echo execute-silent:tmux\ send-keys\ -t\ \$pane_id\ -X\ cancel" \\
-            --bind "ctrl-f:reload(echo)+change-prompt(🔍 )+clear-query+change-border-label([ Esc: back ])" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
@@ -265,15 +311,6 @@ while true; do
             echo "editor" > "\$modefile"
             continue
         elif [[ -n "\$result" ]]; then
-            # Check if this is search mode (selection is empty, query is the search term)
-            fzf_query=\$(echo "\$result" | sed -n '1p')
-            fzf_selection=\$(echo "\$result" | sed -n '2p')
-            if [[ "\$fzf_selection" =~ ^[[:space:]]*$ && -n "\$fzf_query" ]]; then
-                # Search mode - use query as search term
-                echo "search" > "\$modefile"
-                echo "\$fzf_query" > "\$tmpfile"
-                break
-            fi
             echo "\$result" > "\$tmpfile"
             break
         else
@@ -304,19 +341,6 @@ WRAPPER
         LBUFFER="$edited"
         RBUFFER=""
         rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
-        zle redisplay
-        return 0
-    elif [[ "$mode" == "search" ]]; then
-        # Search mode - enter tmux copy-mode and search
-        local search_term=$(cat "$tmpfile" 2>/dev/null)
-        rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
-        if [[ -n "$search_term" ]]; then
-            # Check if term exists in pane history before searching
-            if tmux capture-pane -t "$pane_id" -p -S - | grep -qF "$search_term"; then
-                tmux copy-mode -t "$pane_id"
-                tmux send-keys -t "$pane_id" -X search-backward "$search_term"
-            fi
-        fi
         zle redisplay
         return 0
     elif [[ "$mode" == "clipboard" ]]; then
