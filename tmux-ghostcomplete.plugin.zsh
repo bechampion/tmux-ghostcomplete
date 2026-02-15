@@ -58,7 +58,7 @@ _gc_complete() {
     
     # Set title based on whether we're editing last failed command
     if [[ $editing_last_cmd -eq 1 ]]; then
-        echo " 👻 GhostComplete ~ Edit last cmd " > "$titlefile"
+        echo " 👻 GhostComplete " > "$titlefile"
     else
         echo " 👻 GhostComplete " > "$titlefile"
     fi
@@ -90,11 +90,10 @@ term="\\\$2"
 [[ -z "\\\$term" ]] && { tmux send-keys -t "\\\$pane" -X cancel 2>/dev/null; exit 0; }
 
 
-# Always cancel existing highlighting first
-tmux send-keys -t "\\\$pane" -X cancel 2>/dev/null
 # Only search within VISIBLE pane content (no scrollback)
 visible_content=\\\$(tmux capture-pane -t "\\\$pane" -p)
 if ! echo "\\\$visible_content" | grep -qF "\\\$term"; then
+    tmux send-keys -t "\\\$pane" -X cancel 2>/dev/null
     exit 0
 fi
 
@@ -169,7 +168,7 @@ while true; do
             --no-info \\
             --no-separator \\
             --pointer='▸' \\
-            --prompt=' ' \\
+            --prompt='📋 ' \\
             --with-nth=2.. \\
             --delimiter='\t' \\
             --border=bottom \\
@@ -215,9 +214,9 @@ while true; do
     else
         # Tokens mode - show different label if editing last failed command
         if [[ "\$editing_last_cmd" == "1" ]]; then
-            label='[ Tab: clipboard | C-x: edit last cmd ]'
+            label='[ Tab: clipboard | C-x: edit | C-f: history ]'
         else
-            label='[ Tab: clipboard | C-x: edit ]'
+            label='[ Tab: clipboard | C-x: edit | C-f: history ]'
         fi
         
         result=\$(~/.local/bin/tmux-ghostcomplete "\$(cat "\$queryfile")" "\$pane_id" "\$excludefile" | tac | fzf --exact \\
@@ -229,6 +228,8 @@ while true; do
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
             --bind "result:transform:[ \$(echo {} | wc -c) -gt 1 ] && echo execute-silent:\$highlighter\ \$pane_id\ {} || echo execute-silent:tmux\ send-keys\ -t\ \$pane_id\ -X\ cancel" \\
+            --bind "ctrl-f:reload(echo)+change-prompt(🔍 )+clear-query+change-border-label([ Esc: back ])" \\
+            --bind "change:execute-silent([ -z {} ] && tmux copy-mode -t \$pane_id 2>/dev/null; [ -z {} ] && [ -n {q} ] && tmux send-keys -t \$pane_id -X search-backward {q} 2>/dev/null)" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
             --bind 'esc:abort' \\
             --no-info \\
@@ -265,6 +266,15 @@ while true; do
             echo "editor" > "\$modefile"
             continue
         elif [[ -n "\$result" ]]; then
+            # Check if this is search mode (selection is empty, query is the search term)
+            fzf_query=\$(echo "\$result" | sed -n '1p')
+            fzf_selection=\$(echo "\$result" | sed -n '2p')
+            if [[ "\$fzf_selection" =~ ^[[:space:]]*$ && -n "\$fzf_query" ]]; then
+                # Search mode - use query as search term
+                echo "search" > "\$modefile"
+                echo "\$fzf_query" > "\$tmpfile"
+                break
+            fi
             echo "\$result" > "\$tmpfile"
             break
         else
@@ -295,6 +305,16 @@ WRAPPER
         LBUFFER="$edited"
         RBUFFER=""
         rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
+        zle redisplay
+        return 0
+    elif [[ "$mode" == "search" ]]; then
+        # Search mode - enter tmux copy-mode and search
+        local search_term=$(cat "$tmpfile" 2>/dev/null)
+        rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
+        if [[ -n "$search_term" ]]; then
+            tmux copy-mode -t "$pane_id"
+            tmux send-keys -t "$pane_id" -X search-backward "$search_term"
+        fi
         zle redisplay
         return 0
     elif [[ "$mode" == "clipboard" ]]; then

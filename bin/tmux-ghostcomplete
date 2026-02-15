@@ -1,15 +1,25 @@
 #!/bin/sh
 # tmux-ghostcomplete: Extract tokens from tmux pane for fzf selection
 # Optimized: single awk does all processing
+# Args: $1=query, $2=pane_id, $3=exclude_file, $4=full_history (optional)
 
 target_pane="$2"
 exclude_file="$3"
+full_history="$4"
 
-# Capture and process - no tac, fzf --reverse will flip display
+# Capture pane content - use -S - for full history
 if [ -n "$target_pane" ]; then
-    tmux capture-pane -t "$target_pane" -p
+    if [ "$full_history" = "full" ]; then
+        tmux capture-pane -t "$target_pane" -p -S -
+    else
+        tmux capture-pane -t "$target_pane" -p
+    fi
 else
-    tmux capture-pane -p
+    if [ "$full_history" = "full" ]; then
+        tmux capture-pane -p -S -
+    else
+        tmux capture-pane -p
+    fi
 fi | awk -v excludefile="$exclude_file" '
 BEGIN {
     # Load words to exclude from file
