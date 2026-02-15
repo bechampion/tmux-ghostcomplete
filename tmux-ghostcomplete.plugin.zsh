@@ -311,8 +311,11 @@ WRAPPER
         local search_term=$(cat "$tmpfile" 2>/dev/null)
         rm -f "$tmpfile" "$queryfile" "$excludefile" "$modefile" "$wrapper" "$cmdfile" "$titlefile"
         if [[ -n "$search_term" ]]; then
-            tmux copy-mode -t "$pane_id"
-            tmux send-keys -t "$pane_id" -X search-backward "$search_term"
+            # Check if term exists in pane history before searching
+            if tmux capture-pane -t "$pane_id" -p -S - | grep -qF "$search_term"; then
+                tmux copy-mode -t "$pane_id"
+                tmux send-keys -t "$pane_id" -X search-backward "$search_term"
+            fi
         fi
         zle redisplay
         return 0
