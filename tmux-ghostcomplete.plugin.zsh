@@ -13,55 +13,136 @@ __gc_precmd() {
 precmd_functions+=(__gc_precmd)
 
 # History search function - Ctrl+f
-# Simple text input, Enter searches in tmux copy-mode
+# Simple text input with cursor movement, Enter searches in tmux copy-mode
 _gc_history_search() {
     [[ -z "$TMUX" ]] && return 0
     
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
     
-    # Simple wrapper with key handling
     local wrapper=$(mktemp)
-    cat > "$wrapper" << WRAPPER
+    cat > "$wrapper" << 'WRAPPER'
 #!/bin/bash
-tmpfile="$tmpfile"
-prompt=\$'\e[38;2;149;127;184m❯ \e[0m'
-printf "%s" "\$prompt"
+tmpfile="$1"
+
+prompt=$'\e[38;2;149;127;184m❯ \e[0m'
 input=""
+cursor=0
+
+redraw() {
+    printf '\r%s%s\e[K' "$prompt" "$input"
+    local back=$((${#input} - cursor))
+    [[ $back -gt 0 ]] && printf '\e[%dD' "$back"
+}
+
+printf "%s" "$prompt"
+
 while IFS= read -r -n1 -s char; do
-    case "\$char" in
-        \$'\x1b')
-            read -r -n1 -s -t 0.01 next
-            [[ -z "\$next" ]] && exit 0
-            read -r -n1 -s -t 0.01 _
+    if [[ "$char" == $'\x1b' ]]; then
+        read -r -n1 -s -t 0.1 seq1
+        [[ -z "$seq1" ]] && exit 0  # Just Escape
+        read -r -n1 -s -t 0.1 seq2
+        
+        if [[ "$seq1" == "[" ]]; then
+            case "$seq2" in
+                C)  # Right arrow
+                    if [[ $cursor -lt ${#input} ]]; then
+                        ((cursor++))
+                        printf '\e[C'
+                    fi
+                    ;;
+                D)  # Left arrow
+                    if [[ $cursor -gt 0 ]]; then
+                        ((cursor--))
+                        printf '\e[D'
+                    fi
+                    ;;
+                1)  # Ctrl+arrow
+                    read -r -n1 -s -t 0.1 seq3
+                    read -r -n1 -s -t 0.1 seq4
+                    if [[ "$seq3" == ";" && "$seq4" == "5" ]]; then
+                        read -r -n1 -s -t 0.1 seq5
+                        case "$seq5" in
+                            C)  # Ctrl+Right
+                                while [[ $cursor -lt ${#input} && "${input:$cursor:1}" == " " ]]; do
+                                    ((cursor++))
+                                done
+                                while [[ $cursor -lt ${#input} && "${input:$cursor:1}" != " " ]]; do
+                                    ((cursor++))
+                                done
+                                redraw
+                                ;;
+                            D)  # Ctrl+Left
+                                while [[ $cursor -gt 0 && "${input:$((cursor-1)):1}" == " " ]]; do
+                                    ((cursor--))
+                                done
+                                while [[ $cursor -gt 0 && "${input:$((cursor-1)):1}" != " " ]]; do
+                                    ((cursor--))
+                                done
+                                redraw
+                                ;;
+                        esac
+                    fi
+                    ;;
+                3)  # Delete key
+                    read -r -n1 -s -t 0.1 _
+                    if [[ $cursor -lt ${#input} ]]; then
+                        input="${input:0:$cursor}${input:$((cursor+1))}"
+                        redraw
+                    fi
+                    ;;
+            esac
+        fi
+        continue
+    fi
+    
+    case "$char" in
+        $'\x06') exit 0 ;;  # Ctrl+f
+        $'\x01')  # Ctrl+a - beginning
+            cursor=0
+            redraw
             ;;
-        \$'\x06') exit 0 ;;
-        \$'\x17')  # Ctrl+W - delete word backwards (like bash)
-            if [[ -n "\$input" ]]; then
-                # Skip trailing spaces first
-                while [[ "\$input" == *" " ]]; do
-                    input="\${input%?}"
+        $'\x05')  # Ctrl+e - end
+            cursor=${#input}
+            redraw
+            ;;
+        $'\x17')  # Ctrl+W - delete one word backwards
+            if [[ $cursor -gt 0 ]]; then
+                before="${input:0:$cursor}"
+                after="${input:$cursor}"
+                i=$((${#before} - 1))
+                
+                # Skip trailing spaces
+                while [[ $i -ge 0 ]] && [[ "${before:$i:1}" == " " ]]; do
+                    ((i--))
                 done
-                # Then delete until next space
-                while [[ -n "\$input" && "\$input" != *" " ]]; do
-                    input="\${input%?}"
+                
+                # Delete word (until space or start)
+                while [[ $i -ge 0 ]] && [[ "${before:$i:1}" != " " ]]; do
+                    ((i--))
                 done
-                printf '\r%s%s\e[K' "\$prompt" "\$input"
+                
+                before="${before:0:$((i+1))}"
+                input="$before$after"
+                cursor=${#before}
+                redraw
             fi
             ;;
-        \$'\x7f'|\$'\x08')
-            if [[ -n "\$input" ]]; then
-                input="\${input%?}"
-                printf '\b \b'
+        $'\x7f'|$'\x08')  # Backspace
+            if [[ $cursor -gt 0 ]]; then
+                input="${input:0:$((cursor-1))}${input:$cursor}"
+                ((cursor--))
+                redraw
             fi
             ;;
-        '')
-            echo "\$input" > "\$tmpfile"
+        '')  # Enter
+            echo "$input" > "$tmpfile"
             exit 0
             ;;
-        *)
-            input+="\$char"
-            printf '%s' "\$char"
+        *)  # Insert character
+            input="${input:0:$cursor}$char${input:$cursor}"
+            ((cursor++))
+            redraw
             ;;
     esac
 done
@@ -73,7 +154,7 @@ WRAPPER
         -S 'fg=#54546D' \
         -s 'bg=#1F1F28' \
         -T " 📜 History Search " \
-        "$wrapper"
+        "$wrapper" "$tmpfile"
     
     local search_term=$(cat "$tmpfile" 2>/dev/null)
     rm -f "$tmpfile" "$wrapper"
