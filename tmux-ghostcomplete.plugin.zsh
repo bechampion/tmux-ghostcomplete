@@ -20,16 +20,38 @@ _gc_history_search() {
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
     
-    # Simple wrapper - just read input
+    # Wrapper with custom key handling (Escape, Ctrl+f, Ctrl+c to close)
     local wrapper=$(mktemp)
     cat > "$wrapper" << WRAPPER
 #!/bin/bash
-read -p "🔍 " search_term
-echo "\$search_term" > "$tmpfile"
+tmpfile="$tmpfile"
+prompt=\$'\e[38;2;149;127;184m❯ \e[0m'
+printf "%s" "\$prompt"
+input=""
+while IFS= read -r -n1 -s char; do
+    case "\$char" in
+        \$'\x1b') exit 0 ;;  # Escape
+        \$'\x06') exit 0 ;;  # Ctrl+f
+        \$'\x7f'|\$'\x08')   # Backspace
+            if [[ -n "\$input" ]]; then
+                input="\${input%?}"
+                printf '\b \b'
+            fi
+            ;;
+        '')                  # Enter
+            echo "\$input" > "\$tmpfile"
+            exit 0
+            ;;
+        *)
+            input+="\$char"
+            printf '%s' "\$char"
+            ;;
+    esac
+done
 WRAPPER
     chmod +x "$wrapper"
     
-    tmux display-popup -E -w 40% -h 3 \
+    tmux display-popup -E -w 20% -h 3 \
         -b rounded \
         -S 'fg=#54546D' \
         -s 'bg=#1F1F28' \
@@ -215,7 +237,8 @@ while true; do
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
-            --bind 'esc:abort' \\
+            --bind 'esc:abort' \
+            --bind 'ctrl-n:abort' \\
             --no-info \\
             --no-separator \\
             --pointer='▸' \\
@@ -276,7 +299,8 @@ while true; do
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
             --bind "result:transform:[ \$(echo {} | wc -c) -gt 1 ] && echo execute-silent:\$highlighter\ \$pane_id\ {} || echo execute-silent:tmux\ send-keys\ -t\ \$pane_id\ -X\ cancel" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
-            --bind 'esc:abort' \\
+            --bind 'esc:abort' \
+            --bind 'ctrl-n:abort' \\
             --no-info \\
             --no-separator \\
             --pointer='▸' \\

@@ -69,10 +69,11 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Exact matching** - Uses fzf with exact substring matching (no fuzzy)
 - **Smart completion** - Intelligently handles delimiters to avoid duplication
 - **Styled floating popup** - Subtle rounded borders with Kanagawa-themed colors
-- **Single Escape to close** - Press Escape once to dismiss the popup
+- **Toggle to close** - Press `Ctrl+n` again to dismiss (or Escape)
 - **Clipboard history** - Press Tab to access clipboard history (via cliphist)
 - **Command line editor** - Press Ctrl+x to edit your command in nvim
 - **Edit failed commands** - Automatically loads last failed command for quick fixes
+- **History search** - Press `Ctrl+f` to search through full scrollback history
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
 - **Live highlighting** - Matches are highlighted in your terminal as you scroll
 
@@ -182,10 +183,11 @@ antigen bundle bechampion/tmux-ghostcomplete
 
 | Key | Action |
 |-----|--------|
-| `Ctrl+n` | Open GhostComplete popup |
+| `Ctrl+n` | Open GhostComplete popup (press again to close) |
+| `Ctrl+f` | Open history search (search full scrollback) |
 | `Tab` | Toggle between **tokens** and **clipboard history** |
 | `Ctrl+x` | Open **nvim** to edit command line |
-| `Enter` | Select and insert |
+| `Enter` | Select and insert (or search in `Ctrl+f` mode) |
 | `Escape` | Close popup |
 
 ### Basic Usage
@@ -195,9 +197,41 @@ antigen bundle bechampion/tmux-ghostcomplete
 3. Press `Ctrl+n`
 4. Type to filter the tokens (exact matching)
 5. Press `Enter` to insert the selection
-6. Press `Escape` to cancel
+6. Press `Escape` or `Ctrl+n` to cancel
 
 The selected text is also copied to your clipboard (Wayland).
+
+---
+
+## History Search (Ctrl+f)
+
+Press `Ctrl+f` to open a simple search prompt that searches through your **full tmux scrollback history**.
+
+### How It Works
+
+```
+╭─ 📜 History Search ─╮
+│ ❯ your search term  │
+╰─────────────────────╯
+```
+
+1. Type your search term
+2. Press `Enter` to search - tmux enters copy-mode and highlights all matches
+3. Press `Escape`, `Ctrl+f`, or `Ctrl+c` to cancel
+
+### Features
+
+- Searches **full scrollback** (not just visible area)
+- **Kanagawa-themed highlighting** - green for current match, yellow for others
+- **No tokenization** - search for any text, including spaces
+- **Quick toggle** - press `Ctrl+f` again to close
+
+### Use Cases
+
+- Find that error message from earlier
+- Search for a specific command you ran
+- Locate a URL or path in your history
+- Find text that scrolled off screen
 
 ---
 
@@ -388,10 +422,11 @@ The tokenizer preserves certain patterns intact instead of splitting them:
 Change the trigger key in the plugin file:
 
 ```bash
-# Default: Ctrl+n
+# Default: Ctrl+n for completion, Ctrl+f for history search
 bindkey '^n' _gc_complete
+bindkey '^f' _gc_history_search
 
-# Example: Ctrl+Space
+# Example: Ctrl+Space for completion
 bindkey '^ ' _gc_complete
 ```
 
@@ -428,7 +463,7 @@ The popup uses [Kanagawa](https://github.com/rebelot/kanagawa.nvim) colors:
 - Check tmux version: `tmux -V` (needs 3.2+)
 
 ### No tokens showing
-- There might not be any text longer than 4 characters on screen
+- There might not be any text longer than 3 characters on screen
 - Try reducing the minimum token length in the tokenizer
 
 ### Escape key causes issues
