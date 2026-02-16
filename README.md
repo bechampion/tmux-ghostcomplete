@@ -219,12 +219,28 @@ Press `Ctrl+f` to open a simple search prompt that searches through your **full 
 2. Press `Enter` to search - tmux enters copy-mode and highlights all matches
 3. Press `Escape`, `Ctrl+f`, or `Ctrl+c` to cancel
 
+### Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Search for the term in tmux scrollback |
+| `↑` / `Ctrl+p` | Previous search from history |
+| `↓` / `Ctrl+n` | Next search from history |
+| `←` / `→` | Move cursor |
+| `Ctrl+←` / `Ctrl+→` | Move by word |
+| `Ctrl+a` / `Ctrl+e` | Beginning / end of line |
+| `Ctrl+w` | Delete word backwards |
+| `Backspace` / `Delete` | Delete character |
+| `Escape` / `Ctrl+f` / `Ctrl+c` | Cancel |
+
 ### Features
 
 - Searches **full scrollback** (not just visible area)
 - **Kanagawa-themed highlighting** - green for current match, yellow for others
 - **No tokenization** - search for any text, including spaces
 - **Quick toggle** - press `Ctrl+f` again to close
+- **Search history** - navigate previous searches with `↑`/`↓` or `Ctrl+p`/`Ctrl+n`
+- History stored in `~/.local/share/tmux-ghostcomplete/search_history`
 
 ### Use Cases
 
@@ -232,7 +248,6 @@ Press `Ctrl+f` to open a simple search prompt that searches through your **full 
 - Search for a specific command you ran
 - Locate a URL or path in your history
 - Find text that scrolled off screen
-
 ---
 
 ## Popup Appearance

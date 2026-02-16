@@ -14,25 +14,69 @@ precmd_functions+=(__gc_precmd)
 
 # History search function - Ctrl+f
 # Simple text input with cursor movement, Enter searches in tmux copy-mode
+# Up/Ctrl+P and Down/Ctrl+N navigate through search history
 _gc_history_search() {
     [[ -z "$TMUX" ]] && return 0
     
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
+    local histdir="${XDG_DATA_HOME:-$HOME/.local/share}/tmux-ghostcomplete"
+    local histfile="$histdir/search_history"
+    
+    # Ensure history directory exists
+    mkdir -p "$histdir"
+    touch "$histfile"
     
     local wrapper=$(mktemp)
     cat > "$wrapper" << 'WRAPPER'
 #!/bin/bash
 tmpfile="$1"
+histfile="$2"
 
 prompt=$'\e[38;2;149;127;184m❯ \e[0m'
 input=""
 cursor=0
+saved_input=""  # Save current input when starting history navigation
+
+# Load history into array (most recent last)
+history=()
+if [[ -f "$histfile" ]]; then
+    while IFS= read -r line; do
+        [[ -n "$line" ]] && history+=("$line")
+    done < "$histfile"
+fi
+hist_pos=${#history[@]}  # Start past end (new entry position)
 
 redraw() {
     printf '\r%s%s\e[K' "$prompt" "$input"
     local back=$((${#input} - cursor))
     [[ $back -gt 0 ]] && printf '\e[%dD' "$back"
+}
+
+hist_prev() {
+    # Save current input if we're starting navigation
+    if [[ $hist_pos -eq ${#history[@]} ]]; then
+        saved_input="$input"
+    fi
+    if [[ $hist_pos -gt 0 ]]; then
+        ((hist_pos--))
+        input="${history[$hist_pos]}"
+        cursor=${#input}
+        redraw
+    fi
+}
+
+hist_next() {
+    if [[ $hist_pos -lt ${#history[@]} ]]; then
+        ((hist_pos++))
+        if [[ $hist_pos -eq ${#history[@]} ]]; then
+            input="$saved_input"
+        else
+            input="${history[$hist_pos]}"
+        fi
+        cursor=${#input}
+        redraw
+    fi
 }
 
 printf "%s" "$prompt"
@@ -45,6 +89,12 @@ while IFS= read -r -n1 -s char; do
         
         if [[ "$seq1" == "[" ]]; then
             case "$seq2" in
+                A)  # Up arrow
+                    hist_prev
+                    ;;
+                B)  # Down arrow
+                    hist_next
+                    ;;
                 C)  # Right arrow
                     if [[ $cursor -lt ${#input} ]]; then
                         ((cursor++))
@@ -97,7 +147,13 @@ while IFS= read -r -n1 -s char; do
     fi
     
     case "$char" in
-        $'\x06') exit 0 ;;  # Ctrl+f
+        $'\x06') exit 0 ;;  # Ctrl+f (toggle close)
+        $'\x10')  # Ctrl+P - previous history
+            hist_prev
+            ;;
+        $'\x0e')  # Ctrl+N - next history
+            hist_next
+            ;;
         $'\x01')  # Ctrl+a - beginning
             cursor=0
             redraw
@@ -136,6 +192,14 @@ while IFS= read -r -n1 -s char; do
             fi
             ;;
         '')  # Enter
+            if [[ -n "$input" ]]; then
+                # Add to history if different from last entry
+                last_entry=""
+                [[ ${#history[@]} -gt 0 ]] && last_entry="${history[-1]}"
+                if [[ "$input" != "$last_entry" ]]; then
+                    echo "$input" >> "$histfile"
+                fi
+            fi
             echo "$input" > "$tmpfile"
             exit 0
             ;;
@@ -154,7 +218,7 @@ WRAPPER
         -S 'fg=#54546D' \
         -s 'bg=#1F1F28' \
         -T " 📜 History Search " \
-        "$wrapper" "$tmpfile"
+        "$wrapper" "$tmpfile" "$histfile"
     
     local search_term=$(cat "$tmpfile" 2>/dev/null)
     rm -f "$tmpfile" "$wrapper"
