@@ -20,7 +20,7 @@ _gc_history_search() {
     local pane_id=$(tmux display-message -p '#{pane_id}')
     local tmpfile=$(mktemp)
     
-    # Wrapper with custom key handling (Escape, Ctrl+f, Ctrl+c to close)
+    # Simple wrapper with key handling
     local wrapper=$(mktemp)
     cat > "$wrapper" << WRAPPER
 #!/bin/bash
@@ -30,15 +30,32 @@ printf "%s" "\$prompt"
 input=""
 while IFS= read -r -n1 -s char; do
     case "\$char" in
-        \$'\x1b') exit 0 ;;  # Escape
-        \$'\x06') exit 0 ;;  # Ctrl+f
-        \$'\x7f'|\$'\x08')   # Backspace
+        \$'\x1b')
+            read -r -n1 -s -t 0.01 next
+            [[ -z "\$next" ]] && exit 0
+            read -r -n1 -s -t 0.01 _
+            ;;
+        \$'\x06') exit 0 ;;
+        \$'\x17')  # Ctrl+W - delete word backwards (like bash)
+            if [[ -n "\$input" ]]; then
+                # Skip trailing spaces first
+                while [[ "\$input" == *" " ]]; do
+                    input="\${input%?}"
+                done
+                # Then delete until next space
+                while [[ -n "\$input" && "\$input" != *" " ]]; do
+                    input="\${input%?}"
+                done
+                printf '\r%s%s\e[K' "\$prompt" "\$input"
+            fi
+            ;;
+        \$'\x7f'|\$'\x08')
             if [[ -n "\$input" ]]; then
                 input="\${input%?}"
                 printf '\b \b'
             fi
             ;;
-        '')                  # Enter
+        '')
             echo "\$input" > "\$tmpfile"
             exit 0
             ;;
@@ -61,14 +78,11 @@ WRAPPER
     local search_term=$(cat "$tmpfile" 2>/dev/null)
     rm -f "$tmpfile" "$wrapper"
     
-    # Clean up whitespace
     search_term="${search_term%%[$'\n\r']*}"
     search_term="${search_term%"${search_term##*[![:space:]]}"}"
     
     if [[ -n "$search_term" ]]; then
-        # Check if term exists in pane history before searching
         if tmux capture-pane -t "$pane_id" -p -S - | grep -qF "$search_term"; then
-            # Set Kanagawa-themed highlight colors
             tmux set-option -p -t "$pane_id" copy-mode-current-match-style "fg=#00FF00,bg=#000000,underscore"
             tmux set-option -p -t "$pane_id" copy-mode-match-style "fg=#E6C384,bg=#2d2d2d"
             tmux copy-mode -t "$pane_id"
@@ -237,7 +251,7 @@ while true; do
             --query="\$(cat "\$queryfile")" \\
             --bind 'tab:become:echo TAB_PRESSED' \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
-            --bind 'esc:abort' \
+            --bind 'esc:abort' \\
             --bind 'ctrl-n:abort' \\
             --no-info \\
             --no-separator \\
@@ -299,7 +313,7 @@ while true; do
             --bind "focus:execute-silent(\$highlighter \$pane_id {})" \\
             --bind "result:transform:[ \$(echo {} | wc -c) -gt 1 ] && echo execute-silent:\$highlighter\ \$pane_id\ {} || echo execute-silent:tmux\ send-keys\ -t\ \$pane_id\ -X\ cancel" \\
             --bind 'ctrl-x:become:echo EDITOR_PRESSED; echo {q}; echo {}' \\
-            --bind 'esc:abort' \
+            --bind 'esc:abort' \\
             --bind 'ctrl-n:abort' \\
             --no-info \\
             --no-separator \\
