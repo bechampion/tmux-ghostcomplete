@@ -2,6 +2,7 @@
 # Screen-aware autocomplete using styled tmux popup + fzf
 # Ctrl+n: Token completion from visible pane
 # Ctrl+f: Simple history search (type text, Enter searches in tmux)
+# Ctrl+r: Shell history search (fzf in tmux popup, replaces default C-r)
 # Tab switches to clipboard history (requires cliphist)
 # Ctrl+x opens nvim to edit command
 
@@ -241,6 +242,87 @@ WRAPPER
 
 zle -N _gc_history_search
 bindkey '^f' _gc_history_search
+
+# Shell history search - Ctrl+r
+# Searches zsh command history with fzf in a styled tmux popup
+# Replaces fzf's default Ctrl+r with a consistent ghostcomplete experience
+_gc_shell_history() {
+    [[ -z "$TMUX" ]] && return 0
+
+    local tmpfile=$(mktemp)
+    local histfile_tmp=$(mktemp)
+    local queryfile=$(mktemp)
+
+    # Query atuin sqlite: frequency-sorted, successful commands only (exit = 0)
+    sqlite3 -separator '  ' "$HOME/.local/share/atuin/history.db" "
+        SELECT printf('%6d', COUNT(*)),
+               replace(replace(command, char(10), ' '), char(13), ' ')
+        FROM history
+        WHERE exit = 0 AND deleted_at IS NULL
+        GROUP BY command
+        ORDER BY COUNT(*) DESC, MAX(timestamp) DESC
+        LIMIT 3000
+    " > "$histfile_tmp"
+
+    # Write current buffer as initial query
+    printf '%s' "$LBUFFER" > "$queryfile"
+
+    local wrapper=$(mktemp)
+    cat > "$wrapper" << WRAPPER
+#!/bin/bash
+tmpfile="$tmpfile"
+histfile_tmp="$histfile_tmp"
+queryfile="$queryfile"
+
+selected=\$(cat "\$histfile_tmp" | fzf --exact \\
+    --reverse \\
+    --no-sort \\
+    --tiebreak=index \\
+    --bind 'ctrl-r:toggle-sort' \\
+    --bind 'ctrl-z:ignore' \\
+    --bind 'esc:abort' \\
+    -n2..,.. \\
+    --no-info \\
+    --no-separator \\
+    --pointer='▸' \\
+    --prompt='❯ ' \\
+    --border=bottom \\
+    --border-label='[ C-r: toggle sort | freq ]' \\
+    --border-label-pos=0:bottom \\
+    --color='bg:#1F1F28,fg:#DCD7BA,bg+:#2A2A37,fg+:#DCD7BA,hl:#E6C384,hl+:#E6C384,pointer:#E6C384,prompt:#957FB8,gutter:#1F1F28,border:#54546D,label:#54546D' \\
+    --query="\$(cat "\$queryfile")" \\
+    +m)
+
+if [[ -n "\$selected" ]]; then
+    echo "\$selected" | sed 's/^[[:space:]]*[0-9]*\*\?[[:space:]]*//' > "\$tmpfile"
+fi
+WRAPPER
+    chmod +x "$wrapper"
+
+    tmux display-popup -E -w 50% -h 40% \
+        -b rounded \
+        -S 'fg=#54546D' \
+        -s 'bg=#1F1F28' \
+        -T ' 📜 Shell History ' \
+        "$wrapper"
+
+    local result=$(cat "$tmpfile" 2>/dev/null)
+    result="${result%%[$'\n\r']*}"
+
+    rm -f "$tmpfile" "$histfile_tmp" "$queryfile" "$wrapper"
+
+    if [[ -n "$result" ]]; then
+        LBUFFER="$result"
+        RBUFFER=""
+    fi
+
+    zle redisplay
+    return 0
+}
+
+zle -N _gc_shell_history
+bindkey '^r' _gc_shell_history
+
 
 # Token completion function - Ctrl+n
 _gc_complete() {

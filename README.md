@@ -74,6 +74,7 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Command line editor** - Press Ctrl+x to edit your command in nvim
 - **Edit failed commands** - Automatically loads last failed command for quick fixes
 - **History search** - Press `Ctrl+f` to search through full scrollback history
+- **Shell history** - Press `Ctrl+r` to search command history via atuin (frequency-sorted, errors excluded)
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
 - **Live highlighting** - Matches are highlighted in your terminal as you scroll
 
@@ -113,6 +114,7 @@ The highlighting:
 - [tmux](https://github.com/tmux/tmux) (with `display-popup` support, v3.2+)
 - [fzf](https://github.com/junegunn/fzf)
 - [zsh](https://www.zsh.org/)
+- [atuin](https://github.com/atuinsh/atuin) (optional, for `Ctrl+r` shell history search)
 - [cliphist](https://github.com/sentriz/cliphist) (optional, for clipboard history)
 - [wl-copy](https://github.com/bugaevc/wl-clipboard) (optional, for Wayland clipboard)
 - [nvim](https://neovim.io/) (optional, for command line editing)
@@ -185,6 +187,7 @@ antigen bundle bechampion/tmux-ghostcomplete
 |-----|--------|
 | `Ctrl+n` | Open GhostComplete popup (press again to close) |
 | `Ctrl+f` | Open history search (search full scrollback) |
+| `Ctrl+r` | Open shell history search (zsh command history) |
 | `Tab` | Toggle between **tokens** and **clipboard history** |
 | `Ctrl+x` | Open **nvim** to edit command line |
 | `Enter` | Select and insert (or search in `Ctrl+f` mode) |
@@ -248,6 +251,48 @@ Press `Ctrl+f` to open a simple search prompt that searches through your **full 
 - Search for a specific command you ran
 - Locate a URL or path in your history
 - Find text that scrolled off screen
+---
+
+## Shell History (Ctrl+r)
+
+Press `Ctrl+r` to search your **command history** in a styled tmux popup. Queries [atuin](https://github.com/atuinsh/atuin)'s sqlite database directly for speed, sorted by **frequency** (most used commands first).
+
+### How It Works
+
+```
+╭─ 📜 Shell History ────────────────────╮
+│ ❯ your search query                   │
+│ ▸    42  kubectl get pods -n prod      │
+│      38  git status                    │
+│      15  docker compose up -d          │
+│ ──────────────────────────────────────│
+│ [ C-r: toggle sort | freq ]           │
+╰────────────────────────────────────────╯
+```
+
+1. Type to filter your history (exact matching)
+2. Press `Enter` to insert the selected command
+3. Press `Ctrl+r` inside the popup to toggle between frequency and relevance sort
+4. Press `Escape` to cancel
+
+### Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Insert selected command |
+| `Ctrl+r` | Toggle sort (frequency vs relevance) |
+| `Escape` | Cancel |
+
+### Features
+
+- **Frequency-sorted** - Most used commands appear first (toggle with `Ctrl+r`)
+- **Errors excluded** - Only shows commands that exited successfully (`exit = 0`)
+- **Deduplicated** - Each unique command appears only once with a run count
+- **Pre-filled query** - Current command line text is used as initial search
+- **Powered by atuin** - Queries atuin's sqlite database directly for speed
+- **Kanagawa-themed** - Consistent styling with other ghostcomplete popups
+- **Replaces fzf default** - No need for fzf's built-in `Ctrl+r` widget
+
 ---
 
 ## Popup Appearance
@@ -437,9 +482,10 @@ The tokenizer preserves certain patterns intact instead of splitting them:
 Change the trigger key in the plugin file:
 
 ```bash
-# Default: Ctrl+n for completion, Ctrl+f for history search
+# Default: Ctrl+n for completion, Ctrl+f for history search, Ctrl+r for shell history
 bindkey '^n' _gc_complete
 bindkey '^f' _gc_history_search
+bindkey '^r' _gc_shell_history
 
 # Example: Ctrl+Space for completion
 bindkey '^ ' _gc_complete
