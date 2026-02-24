@@ -258,7 +258,7 @@ _gc_shell_history() {
         SELECT printf('%6d', COUNT(*)),
                replace(replace(command, char(10), ' '), char(13), ' ')
         FROM history
-        WHERE exit = 0 AND deleted_at IS NULL
+        WHERE deleted_at IS NULL
         GROUP BY command
         ORDER BY COUNT(*) DESC, MAX(timestamp) DESC
         LIMIT 3000

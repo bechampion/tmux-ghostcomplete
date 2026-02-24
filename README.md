@@ -74,7 +74,7 @@ Press `Ctrl+n` and a popup appears with all the text tokens visible in your curr
 - **Command line editor** - Press Ctrl+x to edit your command in nvim
 - **Edit failed commands** - Automatically loads last failed command for quick fixes
 - **History search** - Press `Ctrl+f` to search through full scrollback history
-- **Shell history** - Press `Ctrl+r` to search command history via atuin (frequency-sorted, errors excluded)
+- **Shell history** - Press `Ctrl+r` to search command history via atuin (frequency-sorted)
 - **Fast** - Optimized with `sh` and single `awk` for minimal latency
 - **Live highlighting** - Matches are highlighted in your terminal as you scroll
 
@@ -286,7 +286,7 @@ Press `Ctrl+r` to search your **command history** in a styled tmux popup. Querie
 ### Features
 
 - **Frequency-sorted** - Most used commands appear first (toggle with `Ctrl+r`)
-- **Errors excluded** - Only shows commands that exited successfully (`exit = 0`)
+- **All commands** - Includes cancelled and failed commands (only soft-deleted entries are excluded)
 - **Deduplicated** - Each unique command appears only once with a run count
 - **Pre-filled query** - Current command line text is used as initial search
 - **Powered by atuin** - Queries atuin's sqlite database directly for speed
