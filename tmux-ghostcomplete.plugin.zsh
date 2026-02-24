@@ -261,7 +261,7 @@ _gc_shell_history() {
         WHERE deleted_at IS NULL
         GROUP BY command
         ORDER BY COUNT(*) DESC, MAX(timestamp) DESC
-        LIMIT 3000
+        LIMIT 50000
     " > "$histfile_tmp"
 
     # Write current buffer as initial query
