@@ -260,7 +260,7 @@ _gc_shell_history() {
         FROM history
         WHERE deleted_at IS NULL
         GROUP BY command
-        ORDER BY COUNT(*) DESC, MAX(timestamp) DESC
+        ORDER BY MAX(timestamp) DESC
         LIMIT 50000
     " > "$histfile_tmp"
 
