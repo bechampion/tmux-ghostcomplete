@@ -34,7 +34,7 @@ _gc_history_search() {
 tmpfile="$1"
 histfile="$2"
 
-prompt=$'\e[38;2;187;154;247m❯ \e[0m'
+prompt=$'\e[38;2;203;166;247m❯ \e[0m'
 input=""
 cursor=0
 saved_input=""  # Save current input when starting history navigation
@@ -216,8 +216,8 @@ WRAPPER
     
     tmux display-popup -E -w 20% -h 3 \
         -b rounded \
-        -S 'fg=#565f89' \
-        -s 'bg=#1a1b26' \
+        -S 'fg=#6c7086' \
+        -s 'bg=#1e1e2e' \
         -T " 📜 History Search " \
         "$wrapper" "$tmpfile" "$histfile"
     
@@ -229,8 +229,8 @@ WRAPPER
     
     if [[ -n "$search_term" ]]; then
         if tmux capture-pane -t "$pane_id" -p -S - | grep -qF "$search_term"; then
-            tmux set-option -p -t "$pane_id" copy-mode-current-match-style "fg=#00FF00,bg=#000000,underscore"
-            tmux set-option -p -t "$pane_id" copy-mode-match-style "fg=#e0af68,bg=#24283b"
+            tmux set-option -p -t "$pane_id" copy-mode-current-match-style "fg=#a6e3a1,bg=#1e1e2e,underscore"
+            tmux set-option -p -t "$pane_id" copy-mode-match-style "fg=#f9e2af,bg=#313244"
             tmux copy-mode -t "$pane_id"
             tmux send-keys -t "$pane_id" -X search-backward "$search_term"
         fi
@@ -289,7 +289,7 @@ selected=\$(cat "\$histfile_tmp" | fzf --exact \\
     --border=bottom \\
     --border-label='[ C-r: toggle sort | freq ]' \\
     --border-label-pos=0:bottom \\
-    --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#e0af68,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#565f89' \\
+    --color='bg:#1e1e2e,fg:#cdd6f4,bg+:#313244,fg+:#cdd6f4,hl:#f9e2af,hl+:#f9e2af,pointer:#f9e2af,prompt:#cba6f7,gutter:#1e1e2e,border:#6c7086,label:#6c7086' \\
     --query="\$(cat "\$queryfile")" \\
     +m)
 
@@ -301,8 +301,8 @@ WRAPPER
 
     tmux display-popup -E -w 50% -h 40% \
         -b rounded \
-        -S 'fg=#565f89' \
-        -s 'bg=#1a1b26' \
+        -S 'fg=#6c7086' \
+        -s 'bg=#1e1e2e' \
         -T ' 📜 Shell History ' \
         "$wrapper"
 
@@ -411,10 +411,10 @@ if ! echo "\\\$visible_content" | grep -qF "\\\$term"; then
     exit 0
 fi
 
-# Set Tokyo Night-themed highlight colors before entering copy-mode
+# Set Catppuccin Mocha-themed highlight colors before entering copy-mode
 # Bright green for current match (underlined), dim yellow for others
-tmux set-option -p -t "\\\$pane" copy-mode-current-match-style "fg=#00FF00,bg=#000000,underscore"
-tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#e0af68,bg=#24283b"
+tmux set-option -p -t "\\\$pane" copy-mode-current-match-style "fg=#a6e3a1,bg=#1e1e2e,underscore"
+tmux set-option -p -t "\\\$pane" copy-mode-match-style "fg=#f9e2af,bg=#313244"
 
 # Enter copy-mode
 tmux copy-mode -t "\\\$pane" 2>/dev/null
@@ -489,7 +489,7 @@ while true; do
             --border=bottom \\
             --border-label='[ Tab: tokens | C-x: edit ]' \\
             --border-label-pos=0:bottom \\
-            --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#e0af68,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#565f89')
+            --color='bg:#1e1e2e,fg:#cdd6f4,bg+:#313244,fg+:#cdd6f4,hl:#f9e2af,hl+:#f9e2af,pointer:#f9e2af,prompt:#cba6f7,gutter:#1e1e2e,border:#6c7086,label:#6c7086')
         
         first_line=\$(echo "\$result" | head -1)
         if [[ "\$first_line" == "TAB_PRESSED" ]]; then
@@ -549,7 +549,7 @@ while true; do
             --border=bottom \\
             --border-label="\$label" \\
             --border-label-pos=0:bottom \\
-            --color='bg:#1a1b26,fg:#c0caf5,bg+:#24283b,fg+:#c0caf5,hl:#e0af68,hl+:#e0af68,pointer:#e0af68,prompt:#bb9af7,gutter:#1a1b26,border:#565f89,label:#565f89')
+            --color='bg:#1e1e2e,fg:#cdd6f4,bg+:#313244,fg+:#cdd6f4,hl:#f9e2af,hl+:#f9e2af,pointer:#f9e2af,prompt:#cba6f7,gutter:#1e1e2e,border:#6c7086,label:#6c7086')
         
         first_line=\$(echo "\$result" | head -1)
         if [[ "\$first_line" == "TAB_PRESSED" ]]; then
@@ -590,8 +590,8 @@ WRAPPER
     local popup_title=$(cat "$titlefile")
     tmux display-popup -E -w 35% -h 30% \
         -b rounded \
-        -S 'fg=#565f89' \
-        -s 'bg=#1a1b26' \
+        -S 'fg=#6c7086' \
+        -s 'bg=#1e1e2e' \
         -T "$popup_title" \
         "$wrapper"
     
