@@ -370,12 +370,8 @@ _gc_complete() {
         printf '%s' "$current_cmd" > "$cmdfile"
     fi
     
-    # Set title based on whether we're editing last failed command
-    if [[ $editing_last_cmd -eq 1 ]]; then
-        echo " 👻 GhostComplete " > "$titlefile"
-    else
-        echo " 👻 GhostComplete " > "$titlefile"
-    fi
+    # Popup title
+    echo "  GhostComplete " > "$titlefile"
     
     # Track which mode was used
     echo "tokens" > "$modefile"
